@@ -17,11 +17,11 @@ iex> CashRegister.process_transaction(212, 300)
 
 iex> CashRegister.process_file("sample_input.txt")
 [
-  {:ok, "3 quarters,1 dime,3 pennies"},
-  {:ok, "1 dollar"},
-  {:ok, "1 quarter"},
-  {:ok, "5 dollars"},
-  {:ok, "3 quarters,2 dimes,4 pennies"}
+  "3 quarters,1 dime,3 pennies",
+  "1 dollar",
+  "1 quarter",
+  "5 dollars",
+  "3 quarters,2 dimes,4 pennies"
 ]
 ```
 
@@ -49,6 +49,11 @@ Input file (comma-separated owed,paid amounts):
 
 ```elixir
 CashRegister.process_file("sample_input.txt")
+# ["3 quarters,1 dime,3 pennies", "1 dollar", "1 quarter"]
+
+# If any line has an error, returns the first error
+CashRegister.process_file("invalid_file.txt")
+# {:error, "cannot read file invalid_file.txt: no such file or directory"}
 ```
 
 ### Errors

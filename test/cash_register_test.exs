@@ -51,9 +51,9 @@ defmodule CashRegisterTest do
       assert is_list(results)
       assert length(results) == 3
 
-      assert {:ok, "3 quarters,1 dime,3 pennies"} = Enum.at(results, 0)
-      assert {:ok, "no change"} = Enum.at(results, 1)
-      assert {:ok, "2 quarters"} = Enum.at(results, 2)
+      assert "3 quarters,1 dime,3 pennies" = Enum.at(results, 0)
+      assert "no change" = Enum.at(results, 1)
+      assert "2 quarters" = Enum.at(results, 2)
     end
 
     test "returns error for nonexistent file" do
@@ -95,7 +95,7 @@ defmodule CashRegisterTest do
       results = CashRegister.process_file(file_path, divisor: 5)
 
       assert is_list(results)
-      assert [{:ok, result}] = results
+      assert [result] = results
 
       # Should still total to 90 cents
       assert {:ok, denominations} = Parser.parse_change_result(result)
