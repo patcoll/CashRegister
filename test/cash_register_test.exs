@@ -36,4 +36,70 @@ defmodule CashRegisterTest do
       assert_correct_total(denominations, 90)
     end
   end
+
+  describe "process_file/2" do
+    @describetag :tmp_dir
+
+    test "processes valid file with multiple transactions", %{tmp_dir: tmp_dir} do
+      file_path = Path.join(tmp_dir, "transactions.txt")
+      content = "2.12,3.00\n1.00,1.00\n0.50,1.00"
+
+      File.write!(file_path, content)
+
+      results = CashRegister.process_file(file_path)
+
+      assert is_list(results)
+      assert length(results) == 3
+
+      assert {:ok, "3 quarters,1 dime,3 pennies"} = Enum.at(results, 0)
+      assert {:ok, "no change"} = Enum.at(results, 1)
+      assert {:ok, "2 quarters"} = Enum.at(results, 2)
+    end
+
+    test "returns error for nonexistent file" do
+      assert {:error, message} = CashRegister.process_file("nonexistent_file.txt")
+      assert message =~ "cannot read file"
+      assert message =~ "nonexistent_file.txt"
+    end
+
+    test "processes empty file", %{tmp_dir: tmp_dir} do
+      file_path = Path.join(tmp_dir, "empty.txt")
+
+      File.write!(file_path, "")
+
+      results = CashRegister.process_file(file_path)
+
+      assert results == []
+    end
+
+    test "returns first error for file with invalid line", %{tmp_dir: tmp_dir} do
+      file_path = Path.join(tmp_dir, "mixed.txt")
+      content = "2.12,3.00\ninvalid,line\n1.00,1.00"
+
+      File.write!(file_path, content)
+
+      result = CashRegister.process_file(file_path)
+
+      # Should return the first parse error, not a list
+      assert {:error, message} = result
+      assert message =~ "invalid"
+    end
+
+    test "accepts custom divisor option for file processing", %{tmp_dir: tmp_dir} do
+      file_path = Path.join(tmp_dir, "divisor.txt")
+      content = "0.10,1.00"
+
+      File.write!(file_path, content)
+
+      # 90 cents is divisible by 5, should use randomized strategy
+      results = CashRegister.process_file(file_path, divisor: 5)
+
+      assert is_list(results)
+      assert [{:ok, result}] = results
+
+      # Should still total to 90 cents
+      assert {:ok, denominations} = Parser.parse_change_result(result)
+      assert_correct_total(denominations, 90)
+    end
+  end
 end
