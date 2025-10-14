@@ -5,6 +5,9 @@ defmodule CashRegister.Parser do
 
   @type transaction :: {non_neg_integer(), non_neg_integer()}
 
+  # Maximum allowed amount in cents ($100,000.00)
+  @max_amount 10_000_000
+
   @doc """
   Parses a line of input into {owed_cents, paid_cents}.
 
@@ -93,14 +96,7 @@ defmodule CashRegister.Parser do
             {:error, "too many decimal places (max 2): #{amount_str}"}
 
           true ->
-            # Convert to cents: multiply by 100 and convert to integer
-            cents =
-              decimal
-              |> Decimal.mult(100)
-              |> Decimal.round(0)
-              |> Decimal.to_integer()
-
-            {:ok, cents}
+            convert_and_validate_cents(decimal)
         end
 
       {_decimal, _remaining} ->
@@ -108,6 +104,23 @@ defmodule CashRegister.Parser do
 
       :error ->
         {:error, "invalid amount: #{amount_str}"}
+    end
+  end
+
+  defp convert_and_validate_cents(decimal) do
+    # Convert to cents: multiply by 100 and convert to integer
+    cents =
+      decimal
+      |> Decimal.mult(100)
+      |> Decimal.round(0)
+      |> Decimal.to_integer()
+
+    if cents > @max_amount do
+      max_amount_str = :erlang.float_to_binary(@max_amount / 100, decimals: 2)
+      actual_amount_str = :erlang.float_to_binary(cents / 100, decimals: 2)
+      {:error, "amount exceeds maximum allowed (#{max_amount_str}), got: #{actual_amount_str}"}
+    else
+      {:ok, cents}
     end
   end
 

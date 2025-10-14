@@ -77,6 +77,26 @@ defmodule CashRegister.ParserTest do
     test "returns error for 5-element format" do
       assert {:error, "invalid line format: 1,00,2,00,3"} = Parser.parse_line("1,00,2,00,3")
     end
+
+    test "parses amount just under maximum limit ($99,999.99)" do
+      assert {:ok, {9_999_999, 10_000_000}} = Parser.parse_line("99999.99,100000.00")
+    end
+
+    test "parses amount at maximum limit ($100,000.00)" do
+      assert {:ok, {10_000_000, 10_000_000}} = Parser.parse_line("100000.00,100000.00")
+    end
+
+    test "returns error for amount just over maximum limit (100000.01)" do
+      assert {:error, reason} = Parser.parse_line("100000.01,100000.01")
+      assert reason =~ "amount exceeds maximum allowed"
+      assert reason =~ "100000.00"
+    end
+
+    test "returns error for very large amount (1000000.00)" do
+      assert {:error, reason} = Parser.parse_line("1000000.00,1.00")
+      assert reason =~ "amount exceeds maximum allowed"
+      assert reason =~ "100000.00"
+    end
   end
 
   describe "parse_lines/1" do
