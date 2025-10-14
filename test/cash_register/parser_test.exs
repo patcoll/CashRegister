@@ -81,21 +81,40 @@ defmodule CashRegister.ParserTest do
 
   describe "parse_lines/1" do
     test "parses US format lines" do
-      assert [{212, 300}, {100, 200}] = Parser.parse_lines("2.12,3.00\n1.00,2.00\n")
+      assert [
+               {212, 300},
+               {100, 200}
+             ] = Parser.parse_lines("2.12,3.00\n1.00,2.00\n")
     end
 
     test "parses international format lines" do
-      assert [{212, 300}, {150, 200}] = Parser.parse_lines("2,12,3,00\n1,50,2,00\n")
+      assert [
+               {212, 300},
+               {150, 200}
+             ] = Parser.parse_lines("2,12,3,00\n1,50,2,00\n")
     end
 
     test "parses mixed format lines" do
-      assert [{212, 300}, {150, 200}] = Parser.parse_lines("2.12,3.00\n1,50,2,00\n")
+      assert [
+               {212, 300},
+               {150, 200}
+             ] = Parser.parse_lines("2.12,3.00\n1,50,2,00\n")
     end
 
-    test "raises ArgumentError for invalid line" do
-      assert_raise ArgumentError, "invalid line format: invalid", fn ->
-        Parser.parse_lines("2.12,3.00\ninvalid\n1.00,2.00")
-      end
+    test "returns first error for invalid lines" do
+      result = Parser.parse_lines("2.12,3.00\ninvalid\n1.00,2.00")
+
+      assert {:error, "invalid line format: invalid"} = result
+    end
+
+    test "returns first error when all lines invalid" do
+      result = Parser.parse_lines("invalid1\ninvalid2")
+
+      assert {:error, "invalid line format: invalid1"} = result
+    end
+
+    test "returns empty list for empty content" do
+      assert [] = Parser.parse_lines("")
     end
   end
 

@@ -42,23 +42,26 @@ defmodule CashRegister.Parser do
   @doc """
   Parses multiple lines from file content.
 
-  Skips empty lines. Raises `ArgumentError` on the first parse error.
+  Skips empty lines. Returns a list of transactions if all lines are valid,
+  or returns the first error tuple if any line is invalid.
 
   Supports mixed US and international formats in the same input.
   """
-  @spec parse_lines(String.t()) :: list(transaction())
+  @spec parse_lines(String.t()) :: list(transaction()) | {:error, String.t()}
   def parse_lines(content) do
-    content
-    |> String.split("\n", trim: true)
-    |> Enum.map(fn line ->
-      case parse_line(line) do
-        {:ok, transaction} ->
-          transaction
+    results =
+      content
+      |> String.split("\n", trim: true)
+      |> Enum.map(&parse_line/1)
 
-        {:error, reason} ->
-          raise ArgumentError, reason
-      end
-    end)
+    case Enum.find(results, &match?({:error, _}, &1)) do
+      nil ->
+        # No errors, unwrap all the :ok tuples
+        Enum.map(results, fn {:ok, transaction} -> transaction end)
+
+      error ->
+        error
+    end
   end
 
   defp parse_amount(amount_str) do
