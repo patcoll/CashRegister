@@ -83,17 +83,20 @@ defmodule CashRegister.Currency do
 
   Defaults to US Dollar denominations for backward compatibility. Pass a currency
   code like "EUR" or "GBP" to get denominations for that currency.
+
+  Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is unknown.
   """
-  @spec denominations(currency_code()) :: list(denomination())
+  @spec denominations(currency_code()) ::
+          {:ok, list(denomination())} | {:error, String.t()}
   def denominations(currency_code \\ @default_currency) when is_binary(currency_code) do
     case Map.get(@currencies, currency_code) do
       nil ->
-        raise ArgumentError,
-              "unknown currency code: #{inspect(currency_code)}. " <>
-                "Available currencies: #{inspect(Map.keys(@currencies))}"
+        {:error,
+         "unknown currency code: #{inspect(currency_code)}. " <>
+           "Available currencies: #{inspect(Map.keys(@currencies))}"}
 
       currency_info ->
-        currency_info.denominations
+        {:ok, currency_info.denominations}
     end
   end
 
@@ -107,12 +110,15 @@ defmodule CashRegister.Currency do
 
   This is the primary function used by strategies to determine which denominations
   to use when calculating change.
+
+  Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is invalid.
   """
-  @spec resolve_denominations(keyword()) :: list(denomination())
+  @spec resolve_denominations(keyword()) ::
+          {:ok, list(denomination())} | {:error, String.t()}
   def resolve_denominations(opts) when is_list(opts) do
     cond do
       Keyword.has_key?(opts, :denominations) ->
-        Keyword.get(opts, :denominations)
+        {:ok, Keyword.get(opts, :denominations)}
 
       Keyword.has_key?(opts, :currency) ->
         denominations(Keyword.get(opts, :currency))

@@ -8,13 +8,13 @@ defmodule CashRegister.Strategies.RandomizedTest do
   describe "calculate/2" do
     test "produces valid change that sums correctly" do
       change_cents = 88
-      result = Randomized.calculate(change_cents)
+      {:ok, result} = Randomized.calculate(change_cents)
 
       assert_correct_total(result, change_cents)
     end
 
     test "returns empty list for zero change" do
-      assert [] = Randomized.calculate(0)
+      assert {:ok, []} = Randomized.calculate(0)
     end
   end
 
@@ -22,8 +22,8 @@ defmodule CashRegister.Strategies.RandomizedTest do
     test "produces deterministic results with same seed" do
       change_cents = 99
 
-      result1 = Randomized.calculate(change_cents, random_seed: 42)
-      result2 = Randomized.calculate(change_cents, random_seed: 42)
+      {:ok, result1} = Randomized.calculate(change_cents, random_seed: 42)
+      {:ok, result2} = Randomized.calculate(change_cents, random_seed: 42)
 
       assert result1 == result2
       assert_correct_total(result1, change_cents)
@@ -32,8 +32,8 @@ defmodule CashRegister.Strategies.RandomizedTest do
     test "different seeds may produce different orderings" do
       change_cents = 99
 
-      result1 = Randomized.calculate(change_cents, random_seed: 42)
-      result2 = Randomized.calculate(change_cents, random_seed: 123)
+      {:ok, result1} = Randomized.calculate(change_cents, random_seed: 42)
+      {:ok, result2} = Randomized.calculate(change_cents, random_seed: 123)
 
       # Both should still be valid
       assert_correct_total(result1, change_cents)
@@ -46,7 +46,7 @@ defmodule CashRegister.Strategies.RandomizedTest do
 
     test "seeded randomization still produces valid change" do
       change_cents = 67
-      result = Randomized.calculate(change_cents, random_seed: 1)
+      {:ok, result} = Randomized.calculate(change_cents, random_seed: 1)
 
       assert_correct_total(result, change_cents)
     end

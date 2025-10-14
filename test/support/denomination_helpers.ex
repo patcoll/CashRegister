@@ -40,7 +40,8 @@ defmodule CashRegister.DenominationHelpers do
   defp build_denomination_lookup do
     Currency.supported()
     |> Enum.flat_map(fn currency ->
-      Currency.denominations(currency)
+      {:ok, denoms} = Currency.denominations(currency)
+      denoms
     end)
     |> Map.new(fn {id, value, _singular, _plural} -> {id, value} end)
   end
@@ -108,7 +109,8 @@ defmodule CashRegister.DenominationHelpers do
     denominations =
       Currency.supported()
       |> Enum.flat_map(fn currency ->
-        Currency.denominations(currency)
+        {:ok, denoms} = Currency.denominations(currency)
+        denoms
       end)
 
     case Enum.find(denominations, fn {denom_id, _value, _singular, _plural} -> denom_id == id end) do

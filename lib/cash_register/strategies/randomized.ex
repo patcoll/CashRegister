@@ -16,10 +16,14 @@ defmodule CashRegister.Strategies.Randomized do
 
   @impl true
   def calculate(change_cents, opts \\ []) do
-    base_denominations = Currency.resolve_denominations(opts)
-    denominations = shuffle_denominations(base_denominations, opts)
+    case Currency.resolve_denominations(opts) do
+      {:ok, base_denominations} ->
+        denominations = shuffle_denominations(base_denominations, opts)
+        Greedy.calculate(change_cents, denominations: denominations)
 
-    Greedy.calculate(change_cents, denominations: denominations)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp shuffle_denominations(denominations, opts) do

@@ -24,10 +24,13 @@ defmodule CashRegister.ChangeStrategy do
   @doc """
   Calculates the denomination breakdown for a given change amount.
 
-  Returns a list of change items: `{id, count, singular, plural}`
+  Returns `{:ok, change_items}` with a list of change items, or `{:error, reason}`
+  if the calculation fails (e.g., invalid currency).
+
+  Each change item contains: `{id, count, singular, plural}`
 
   Accepts optional keyword arguments for configuration.
   """
   @callback calculate(change_cents :: non_neg_integer(), opts :: keyword()) ::
-              list(change_item())
+              {:ok, list(change_item())} | {:error, String.t()}
 end

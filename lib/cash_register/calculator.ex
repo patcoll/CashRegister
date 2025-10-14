@@ -36,13 +36,8 @@ defmodule CashRegister.Calculator do
     if change_cents == 0 do
       {:ok, []}
     else
-      case StrategyRules.select_strategy(change_cents, opts) do
-        {:ok, strategy} ->
-          result = strategy.calculate(change_cents, opts)
-          {:ok, result}
-
-        {:error, reason} ->
-          {:error, reason}
+      with {:ok, strategy} <- StrategyRules.select_strategy(change_cents, opts) do
+        strategy.calculate(change_cents, opts)
       end
     end
   end
