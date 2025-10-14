@@ -81,18 +81,8 @@ defmodule CashRegister.Currency do
 
   Each denomination is a 4-tuple: `{id, value, singular_display, plural_display}`
 
-  Defaults to US Dollar denominations for backward compatibility.
-
-  ## Examples
-
-      iex> CashRegister.Currency.denominations()
-      [{"dollar", 100, "dollar", "dollars"}, {"quarter", 25, "quarter", "quarters"}, ...]
-
-      iex> CashRegister.Currency.denominations("EUR")
-      [{"euro_2", 200, "2-euro coin", "2-euro coins"}, {"euro", 100, "euro", "euros"}, ...]
-
-      iex> CashRegister.Currency.denominations("GBP")
-      [{"pound_2", 200, "2-pound coin", "2-pound coins"}, {"pound", 100, "pound", "pounds"}, ...]
+  Defaults to US Dollar denominations for backward compatibility. Pass a currency
+  code like "EUR" or "GBP" to get denominations for that currency.
   """
   @spec denominations(currency_code()) :: list(denomination())
   def denominations(currency_code \\ @default_currency) when is_binary(currency_code) do
@@ -115,16 +105,8 @@ defmodule CashRegister.Currency do
   2. `:currency` code provided in opts
   3. Default currency denominations
 
-  ## Examples
-
-      iex> CashRegister.Currency.resolve_denominations([])
-      [{"dollar", 100, "dollar", "dollars"}, {"quarter", 25, "quarter", "quarters"}, ...]
-
-      iex> CashRegister.Currency.resolve_denominations(currency: "EUR")
-      [{"euro_2", 200, "2-euro coin", "2-euro coins"}, {"euro", 100, "euro", "euros"}, ...]
-
-      iex> CashRegister.Currency.resolve_denominations(denominations: [{"custom", 50, "custom", "customs"}])
-      [{"custom", 50, "custom", "customs"}]
+  This is the primary function used by strategies to determine which denominations
+  to use when calculating change.
   """
   @spec resolve_denominations(keyword()) :: list(denomination())
   def resolve_denominations(opts) when is_list(opts) do
@@ -143,10 +125,8 @@ defmodule CashRegister.Currency do
   @doc """
   Returns information about a specific currency.
 
-  ## Examples
-
-      iex> CashRegister.Currency.info("EUR")
-      %{name: "Euro", symbol: "€", denominations: [...]}
+  Returns a map with keys `:name`, `:symbol`, and `:denominations`, or `nil`
+  if the currency code is not supported.
   """
   @spec info(currency_code()) :: currency_info() | nil
   def info(currency_code) when is_binary(currency_code) do
@@ -154,12 +134,7 @@ defmodule CashRegister.Currency do
   end
 
   @doc """
-  Returns a list of all supported currency codes.
-
-  ## Examples
-
-      iex> CashRegister.Currency.supported()
-      ["EUR", "GBP", "USD"]
+  Returns a list of all supported currency codes in alphabetical order.
   """
   @spec supported() :: list(currency_code())
   def supported do

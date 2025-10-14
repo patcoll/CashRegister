@@ -1,7 +1,7 @@
 defmodule CashRegister.Calculator do
   @moduledoc false
 
-  alias CashRegister.{ChangeStrategy, Config}
+  alias CashRegister.{ChangeStrategy, StrategyRules}
 
   @doc """
   Calculates change for a transaction.
@@ -36,7 +36,7 @@ defmodule CashRegister.Calculator do
     if change_cents == 0 do
       {:ok, []}
     else
-      case Config.change_strategy(change_cents, opts) do
+      case StrategyRules.select_strategy(change_cents, opts) do
         {:ok, strategy} ->
           result = strategy.calculate(change_cents, opts)
           {:ok, result}
