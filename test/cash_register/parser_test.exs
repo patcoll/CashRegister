@@ -83,6 +83,18 @@ defmodule CashRegister.ParserTest do
       assert reason =~ "multiple decimal points"
     end
 
+    test "returns error for amount with trailing characters" do
+      assert {:error, reason} = Parser.parse_line("1.50abc,2.00")
+      assert reason =~ "trailing characters"
+      assert reason =~ "1.50abc"
+    end
+
+    test "returns error for non-numeric amount" do
+      assert {:error, reason} = Parser.parse_line("abc,2.00")
+      assert reason =~ "not a number"
+      assert reason =~ "abc"
+    end
+
     test "returns error for 3-element format" do
       assert {:error, "invalid line format: 1,00,2"} = Parser.parse_line("1,00,2")
     end

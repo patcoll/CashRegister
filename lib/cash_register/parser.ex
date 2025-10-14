@@ -99,11 +99,11 @@ defmodule CashRegister.Parser do
             convert_and_validate_cents(decimal)
         end
 
-      {_decimal, _remaining} ->
-        {:error, "invalid amount format: #{amount_str}"}
+      {_decimal, remaining} when remaining != "" ->
+        {:error, "invalid amount format (trailing characters): #{amount_str}"}
 
       :error ->
-        {:error, "invalid amount: #{amount_str}"}
+        {:error, "invalid amount (not a number): #{amount_str}"}
     end
   end
 
