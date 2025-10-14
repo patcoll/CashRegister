@@ -3,7 +3,7 @@ defmodule CashRegister.Parser do
   Parses input containing transaction data.
   """
 
-  @typep transaction :: {non_neg_integer(), non_neg_integer()}
+  @type transaction :: {non_neg_integer(), non_neg_integer()}
 
   @doc """
   Parses a line of input into {owed_cents, paid_cents}.
