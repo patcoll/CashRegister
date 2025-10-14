@@ -1,50 +1,18 @@
 defmodule CashRegisterTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
-  doctest CashRegister
-  doctest CashRegister.Calculator
-  doctest CashRegister.Config
-  doctest CashRegister.Formatter
-  doctest CashRegister.Parser
+  import CashRegister.DenominationHelpers
 
-  alias CashRegister.Config
   alias CashRegister.Parser
-  alias CashRegister.Strategies.{Greedy, Randomized}
 
-  describe "Greedy change strategy" do
-    test "calculates change using greedy algorithm" do
-      assert [{"quarter", 3}, {"dime", 1}, {"penny", 3}] = Greedy.calculate(88)
-    end
-
-    test "returns empty list for zero change" do
-      assert [] = Greedy.calculate(0)
-    end
-
-    test "handles single denomination" do
-      assert [{"dollar", 1}] = Greedy.calculate(100)
-    end
-
-    test "handles all pennies" do
-      assert [{"penny", 3}] = Greedy.calculate(3)
-    end
-  end
-
-  describe "Randomized change strategy" do
-    test "produces valid change that sums correctly" do
-      change_cents = 88
-      result = Randomized.calculate(change_cents)
-
-      assert_correct_total(result, change_cents)
-    end
-
-    test "returns empty list for zero change" do
-      assert [] = Randomized.calculate(0)
-    end
-  end
-
-  describe "CashRegister transactions" do
+  describe "process_transaction/3" do
     test "processes single transaction" do
       assert {:ok, "3 quarters,1 dime,3 pennies"} = CashRegister.process_transaction(212, 300)
+    end
+
+    test "returns error for insufficient payment" do
+      assert {:error, "insufficient payment: paid 200 cents < owed 300 cents"} =
+               CashRegister.process_transaction(300, 200)
     end
 
     test "processes exact change transaction" do
@@ -58,16 +26,8 @@ defmodule CashRegisterTest do
 
       assert_correct_total(denominations, 99)
     end
-  end
 
-  describe "Custom divisor option" do
-    test "Calculator.calculate accepts custom divisor" do
-      # 100 is divisible by 5, so with divisor: 5 it uses Randomized
-      assert {:ok, result} = CashRegister.Calculator.calculate(0, 100, divisor: 5)
-      assert_correct_total(result, 100)
-    end
-
-    test "process_transaction accepts custom divisor" do
+    test "accepts custom divisor option" do
       # 90 is divisible by 5, so with divisor: 5 it uses Randomized
       assert {:ok, result} = CashRegister.process_transaction(10, 100, divisor: 5)
 
@@ -75,27 +35,5 @@ defmodule CashRegisterTest do
 
       assert_correct_total(denominations, 90)
     end
-
-    test "Calculator.calculate with divisor that triggers Greedy" do
-      # 88 is not divisible by 5, so uses Greedy
-      assert {:ok, result} = CashRegister.Calculator.calculate(0, 88, divisor: 5)
-      assert [{"quarter", 3}, {"dime", 1}, {"penny", 3}] = result
-    end
-  end
-
-  defp assert_correct_total(denominations, expected_cents) do
-    total = calculate_total(denominations)
-    assert total == expected_cents
-  end
-
-  defp calculate_total(denominations) do
-    Enum.reduce(denominations, 0, fn {name, count}, acc ->
-      value =
-        Config.denominations()
-        |> Enum.find(fn {n, _} -> n == name end)
-        |> elem(1)
-
-      acc + value * count
-    end)
   end
 end

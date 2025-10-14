@@ -27,15 +27,7 @@ defmodule CashRegister do
   @doc """
   Processes a single transaction and returns formatted change.
 
-  ## Examples
-
-  ```elixir
-  iex> CashRegister.process_transaction(212, 300)
-  {:ok, "3 quarters,1 dime,3 pennies"}
-
-  iex> CashRegister.process_transaction(300, 200)
-  {:error, "insufficient payment: paid 200 cents < owed 300 cents"}
-  ```
+  Returns `{:ok, formatted_change}` or `{:error, reason}`.
 
   ## Options
 

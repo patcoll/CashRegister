@@ -6,11 +6,15 @@ defmodule CashRegister.MixProject do
       app: :cash_register,
       version: "0.1.0",
       elixir: "~> 1.18",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       preferred_cli_env: ["test.watch": :test, format: :test, dialyzer: :test]
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   def application do
     [

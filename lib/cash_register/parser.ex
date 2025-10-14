@@ -8,51 +8,10 @@ defmodule CashRegister.Parser do
   @doc """
   Parses a line of input into {owed_cents, paid_cents}.
 
-  Expected format: "1.00,2.00" (US format with period as decimal separator)
-  or "1,00,2,00" (international format with comma as decimal separator)
+  Supports both US format ("1.00,2.00") and international format ("1,00,2,00").
+  Format is automatically detected based on comma count.
 
-  ## Examples
-
-  US format (2 elements when split by comma):
-
-  ```elixir
-  iex> CashRegister.Parser.parse_line("2.12,3.00")
-  {:ok, {212, 300}}
-
-  iex> CashRegister.Parser.parse_line("1.50,2.00")
-  {:ok, {150, 200}}
-
-  iex> CashRegister.Parser.parse_line("0.00,1.00")
-  {:ok, {0, 100}}
-  ```
-
-  International format (4 elements when split by comma):
-
-  ```elixir
-  iex> CashRegister.Parser.parse_line("2,12,3,00")
-  {:ok, {212, 300}}
-
-  iex> CashRegister.Parser.parse_line("1,50,2,00")
-  {:ok, {150, 200}}
-
-  iex> CashRegister.Parser.parse_line("0,00,1,00")
-  {:ok, {0, 100}}
-  ```
-
-  Error cases:
-
-  ```elixir
-  iex> CashRegister.Parser.parse_line("invalid")
-  {:error, "invalid line format: invalid"}
-
-  iex> {:error, _} = CashRegister.Parser.parse_line("-1.00,2.00")
-
-  iex> CashRegister.Parser.parse_line("1,00,2")
-  {:error, "invalid line format: 1,00,2"}
-
-  iex> CashRegister.Parser.parse_line("1,00,2,00,3")
-  {:error, "invalid line format: 1,00,2,00,3"}
-  ```
+  Returns `{:ok, {owed_cents, paid_cents}}` or `{:error, reason}`.
   """
   @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, String.t()}
   def parse_line(line) do
@@ -83,37 +42,9 @@ defmodule CashRegister.Parser do
   @doc """
   Parses multiple lines from file content.
 
-  Skips empty lines and raises on the first parse error.
+  Skips empty lines. Raises `ArgumentError` on the first parse error.
 
-  ## Examples
-
-  US format:
-
-  ```elixir
-  iex> CashRegister.Parser.parse_lines("2.12,3.00\\n1.00,2.00\\n")
-  [{212, 300}, {100, 200}]
-  ```
-
-  International format:
-
-  ```elixir
-  iex> CashRegister.Parser.parse_lines("2,12,3,00\\n1,50,2,00\\n")
-  [{212, 300}, {150, 200}]
-  ```
-
-  Mixed formats:
-
-  ```elixir
-  iex> CashRegister.Parser.parse_lines("2.12,3.00\\n1,50,2,00\\n")
-  [{212, 300}, {150, 200}]
-  ```
-
-  Error handling:
-
-  ```elixir
-  iex> CashRegister.Parser.parse_lines("2.12,3.00\\ninvalid\\n1.00,2.00")
-  ** (ArgumentError) invalid line format: invalid
-  ```
+  Supports mixed US and international formats in the same input.
   """
   @spec parse_lines(String.t()) :: list(transaction())
   def parse_lines(content) do
@@ -149,27 +80,7 @@ defmodule CashRegister.Parser do
   @doc """
   Parses a formatted change string back into denominations.
 
-  ## Examples
-
-  ```elixir
-  iex> CashRegister.Parser.parse_change_result("3 quarters,1 dime,3 pennies")
-  {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]}
-
-  iex> CashRegister.Parser.parse_change_result("1 dollar")
-  {:ok, [{"dollar", 1}]}
-
-  iex> CashRegister.Parser.parse_change_result("2 pennies")
-  {:ok, [{"penny", 2}]}
-
-  iex> CashRegister.Parser.parse_change_result("no change")
-  {:ok, []}
-
-  iex> CashRegister.Parser.parse_change_result("")
-  {:ok, []}
-
-  iex> CashRegister.Parser.parse_change_result("invalid format")
-  {:error, "invalid change format: invalid format"}
-  ```
+  Returns `{:ok, denominations}` or `{:error, reason}`.
   """
   @spec parse_change_result(String.t()) ::
           {:ok, list(CashRegister.Config.denomination())} | {:error, String.t()}

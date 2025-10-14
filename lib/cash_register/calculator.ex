@@ -6,22 +6,8 @@ defmodule CashRegister.Calculator do
   @doc """
   Calculates change for a transaction.
 
-  ## Examples
-
-  ```elixir
-  iex> CashRegister.Calculator.calculate(212, 300)
-  {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]}
-
-  iex> CashRegister.Calculator.calculate(100, 100)
-  {:ok, []}
-
-  iex> CashRegister.Calculator.calculate(300, 200)
-  {:error, "insufficient payment: paid 200 cents < owed 300 cents"}
-
-  iex> {:error, reason} = CashRegister.Calculator.calculate(-100, 200)
-  iex> reason =~ "must be non-negative"
-  true
-  ```
+  Returns `{:ok, denominations}` with a list of coin/bill denominations needed,
+  or `{:error, reason}` if the transaction is invalid.
 
   ## Options
 
