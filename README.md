@@ -13,10 +13,16 @@ mix test
 iex -S mix
 
 iex> CashRegister.process_transaction(212, 300)
-"3 quarters,1 dime,3 pennies"
+{:ok, "3 quarters,1 dime,3 pennies"}
 
 iex> CashRegister.process_file("sample_input.txt")
-["3 quarters,1 dime,3 pennies", "1 dollar", "1 quarter"]
+[
+  {:ok, "3 quarters,1 dime,3 pennies"},
+  {:ok, "1 dollar"},
+  {:ok, "1 quarter"},
+  {:ok, "5 dollars"},
+  {:ok, "3 quarters,2 dimes,4 pennies"}
+]
 ```
 
 ## Usage
@@ -25,10 +31,10 @@ iex> CashRegister.process_file("sample_input.txt")
 
 ```elixir
 CashRegister.process_transaction(212, 300)
-# "3 quarters,1 dime,3 pennies"
+# {:ok, "3 quarters,1 dime,3 pennies"}
 
 CashRegister.process_transaction(100, 100)
-# "no change"
+# {:ok, "no change"}
 ```
 
 ### File Processing
@@ -49,10 +55,10 @@ CashRegister.process_file("sample_input.txt")
 
 ```elixir
 CashRegister.process_transaction(300, 200)
-# ** (ArgumentError) insufficient payment: paid 200 cents < owed 300 cents
+# {:error, "insufficient payment: paid 200 cents < owed 300 cents"}
 
 CashRegister.process_transaction(-100, 200)
-# ** (ArgumentError) amounts must be non-negative: owed=-100, paid=200
+# {:error, "amounts must be non-negative: owed=-100, paid=200"}
 ```
 
 ## Special Behavior
@@ -65,43 +71,84 @@ When change is divisible by 3, the system randomizes the denomination order befo
 - 99 / 3 = 33
 - Output varies: "9 dimes,1 nickel,4 pennies" or "3 quarters,2 dimes,4 pennies"
 
-Change the divisor at runtime:
+### Custom Divisor
+
+Change the divisor using options:
 
 ```elixir
-Application.put_env(:cash_register, :divisor, 5)
+# Use divisor of 5 instead of 3
+CashRegister.process_transaction(212, 300, divisor: 5)
+
+# Process file with custom divisor
+CashRegister.process_file("sample_input.txt", divisor: 10)
+```
+
+### International Currency Support
+
+Support for EUR and GBP currencies:
+
+```elixir
+# Use Euro denominations
+CashRegister.process_transaction(212, 300, currency: "EUR")
+# {:ok, "1 euro,1 10-cent coin,2 cents"}
+
+# Use British Pound denominations
+CashRegister.process_transaction(212, 300, currency: "GBP")
+# {:ok, "50-pence coin,2 20-pence coins,2 5-pence coins,8 pennies"}
 ```
 
 ## How It Works
 
-The system uses a Strategy pattern to select between two algorithms:
+The system uses a Strategy pattern with an extensible rules pipeline:
+
+### Strategies
 
 - **Greedy**: Standard largest-first denomination algorithm (default)
 - **Randomized**: Shuffles denominations before applying greedy (when change divisible by configured divisor)
 
-Components:
+### Components
 
-- `Parser` - Converts CSV input to integers (cents)
-- `Calculator` - Selects strategy and calculates change
+- `Parser` - Converts CSV input to integers (cents using Decimal library)
+- `Calculator` - Orchestrates strategy selection and change calculation
+- `StrategyRules` - Extensible rules pipeline for strategy selection
+- `Currency` - Provides denomination sets for USD, EUR, and GBP
 - `Formatter` - Converts denominations to readable strings
-- `Config` - Provides denominations and strategy selection logic
 
-All amounts are stored as integer cents to avoid floating-point errors.
+### Extensible Rules Pipeline
+
+The rules system allows custom logic for strategy selection:
+
+```elixir
+# Define a custom rule
+large_amount_rule = fn cents, _opts ->
+  if cents > 10_000, do: {:ok, CashRegister.Strategies.Randomized}
+end
+
+# Use custom rules
+CashRegister.process_transaction(15_000, 20_000, strategy_rules: [large_amount_rule])
+```
+
+Rules are evaluated in order, and the first matching rule determines the strategy. If no rules match, the Greedy strategy is used.
+
+All amounts are stored as integer cents using the Decimal library to avoid floating-point precision errors.
 
 ## Testing
 
 ```bash
-mix test                    # Run all tests (29 total)
+mix test                    # Run all tests
 mix test --trace            # Detailed output
 mix test --cover            # Coverage report
 ```
 
 Tests cover:
 
-- Input parsing and validation
-- Both calculation strategies
+- Input parsing and validation with Decimal precision
+- Both calculation strategies (Greedy and Randomized)
 - Output formatting and pluralization
-- Strategy selection logic
-- Edge cases (exact change, negative amounts, invalid input)
+- Extensible rules pipeline and custom rules
+- International currency support (USD, EUR, GBP)
+- File processing with error handling
+- Edge cases (exact change, negative amounts, invalid input, divisor validation)
 
 ## Code Quality
 
@@ -115,7 +162,3 @@ mix compile --warnings-as-errors
 
 - Elixir ~> 1.18
 - Erlang/OTP 27
-
-## Dependencies
-
-- `credo` ~> 1.7 (dev/test only)
