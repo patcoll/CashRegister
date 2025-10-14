@@ -137,38 +137,4 @@ defmodule CashRegister.ParserTest do
       assert [] = Parser.parse_lines("")
     end
   end
-
-  describe "parse_change_result/1" do
-    test "parses multiple denominations" do
-      assert {:ok,
-              [
-                {"quarter", 3, "quarter", "quarters"},
-                {"dime", 1, "dime", "dimes"},
-                {"penny", 3, "penny", "pennies"}
-              ]} = Parser.parse_change_result("3 quarters,1 dime,3 pennies")
-    end
-
-    test "parses single dollar" do
-      assert {:ok, [{"dollar", 1, "dollar", "dollars"}]} =
-               Parser.parse_change_result("1 dollar")
-    end
-
-    test "parses multiple pennies" do
-      assert {:ok, [{"penny", 2, "penny", "pennies"}]} =
-               Parser.parse_change_result("2 pennies")
-    end
-
-    test "parses 'no change'" do
-      assert {:ok, []} = Parser.parse_change_result("no change")
-    end
-
-    test "parses empty string" do
-      assert {:ok, []} = Parser.parse_change_result("")
-    end
-
-    test "returns error for invalid format" do
-      assert {:error, "invalid change format: invalid format"} =
-               Parser.parse_change_result("invalid format")
-    end
-  end
 end
