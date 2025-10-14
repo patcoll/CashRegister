@@ -24,6 +24,19 @@ defmodule CashRegister.ParserTest do
       assert {:ok, {29, 100}} = Parser.parse_line("0.29,1.00")
     end
 
+    test "parses other problematic floating point amounts correctly" do
+      assert {:ok, {19, 100}} = Parser.parse_line("0.19,1.00")
+      assert {:ok, {39, 100}} = Parser.parse_line("0.39,1.00")
+      assert {:ok, {1, 100}} = Parser.parse_line("0.01,1.00")
+      assert {:ok, {99, 100}} = Parser.parse_line("0.99,1.00")
+    end
+
+    test "parses amounts with repeating decimal representations" do
+      assert {:ok, {101, 200}} = Parser.parse_line("1.01,2.00")
+      assert {:ok, {201, 300}} = Parser.parse_line("2.01,3.00")
+      assert {:ok, {267, 300}} = Parser.parse_line("2.67,3.00")
+    end
+
     test "parses 1.5 correctly (single decimal digit with padding)" do
       assert {:ok, {150, 250}} = Parser.parse_line("1.5,2.5")
       assert {:ok, {130, 100}} = Parser.parse_line("1.3,1.0")
