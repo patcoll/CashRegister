@@ -42,3 +42,6 @@ Thumbs.db
 
 # Log files
 *.log
+
+# Dialyzer PLT files
+/priv/plts/

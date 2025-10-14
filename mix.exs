@@ -9,12 +9,20 @@ defmodule CashRegister.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      preferred_cli_env: ["test.watch": :test, format: :test, dialyzer: :test]
+      preferred_cli_env: ["test.watch": :test, format: :test, dialyzer: :test],
+      dialyzer: dialyzer()
     ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp dialyzer do
+    [
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+      plt_add_apps: [:mix]
+    ]
+  end
 
   def application do
     [
