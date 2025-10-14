@@ -22,18 +22,24 @@ defmodule CashRegister.Calculator do
   iex> reason =~ "must be non-negative"
   true
   ```
+
+  ## Options
+
+    * `:divisor` - Custom divisor for strategy selection (default: from config)
   """
-  @spec calculate(integer(), integer()) ::
+  @spec calculate(integer(), integer(), keyword()) ::
           {:ok, list(Config.denomination())} | {:error, String.t()}
-  def calculate(owed_cents, paid_cents) when owed_cents < 0 or paid_cents < 0 do
+  def calculate(owed_cents, paid_cents, opts \\ [])
+
+  def calculate(owed_cents, paid_cents, _opts) when owed_cents < 0 or paid_cents < 0 do
     {:error, "amounts must be non-negative: owed=#{owed_cents}, paid=#{paid_cents}"}
   end
 
-  def calculate(owed_cents, paid_cents) when paid_cents < owed_cents do
+  def calculate(owed_cents, paid_cents, _opts) when paid_cents < owed_cents do
     {:error, "insufficient payment: paid #{paid_cents} cents < owed #{owed_cents} cents"}
   end
 
-  def calculate(owed_cents, paid_cents)
+  def calculate(owed_cents, paid_cents, opts)
       when is_integer(owed_cents) and is_integer(paid_cents) do
     change_cents = paid_cents - owed_cents
 
@@ -41,7 +47,7 @@ defmodule CashRegister.Calculator do
       if change_cents == 0 do
         []
       else
-        strategy = Config.change_strategy(change_cents)
+        strategy = Config.change_strategy(change_cents, opts)
         strategy.calculate(change_cents)
       end
 

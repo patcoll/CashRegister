@@ -1,6 +1,8 @@
 defmodule CashRegister.Config do
   @moduledoc false
 
+  @default_divisor 3
+
   @denominations [
     {"dollar", 100},
     {"quarter", 25},
@@ -8,8 +10,6 @@ defmodule CashRegister.Config do
     {"nickel", 5},
     {"penny", 1}
   ]
-
-  @divisor Application.compile_env(:cash_register, :divisor, 3)
 
   @type denomination :: {String.t(), pos_integer()}
 
@@ -31,14 +31,12 @@ defmodule CashRegister.Config do
   @spec denominations() :: list(denomination())
   def denominations, do: @denominations
 
-  @doc "Returns configured default divisor."
-  @spec divisor() :: pos_integer()
-  def divisor, do: @divisor
-
   @doc """
   Selects the appropriate strategy based on the change amount.
 
   ## Examples
+
+  With default divisor (3):
 
   ```elixir
   iex> CashRegister.Config.change_strategy(99)
@@ -55,9 +53,24 @@ defmodule CashRegister.Config do
   iex> CashRegister.Config.change_strategy(1)
   CashRegister.Strategies.Greedy
   ```
+
+  With custom divisor via options:
+
+  ```elixir
+  iex> CashRegister.Config.change_strategy(100, divisor: 5)
+  CashRegister.Strategies.Randomized
+  iex> CashRegister.Config.change_strategy(88, divisor: 5)
+  CashRegister.Strategies.Greedy
+  ```
+
+  ## Options
+
+    * `:divisor` - Custom divisor for strategy selection (default: from config)
   """
-  @spec change_strategy(non_neg_integer(), pos_integer()) :: module()
-  def change_strategy(change_cents, divisor \\ @divisor) do
+  @spec change_strategy(non_neg_integer(), keyword()) :: module()
+  def change_strategy(change_cents, opts \\ []) do
+    divisor = Keyword.get(opts, :divisor, @default_divisor)
+
     if rem(change_cents, divisor) == 0 do
       CashRegister.Strategies.Randomized
     else

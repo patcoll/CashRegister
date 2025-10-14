@@ -60,6 +60,29 @@ defmodule CashRegisterTest do
     end
   end
 
+  describe "Custom divisor option" do
+    test "Calculator.calculate accepts custom divisor" do
+      # 100 is divisible by 5, so with divisor: 5 it uses Randomized
+      assert {:ok, result} = CashRegister.Calculator.calculate(0, 100, divisor: 5)
+      assert_correct_total(result, 100)
+    end
+
+    test "process_transaction accepts custom divisor" do
+      # 90 is divisible by 5, so with divisor: 5 it uses Randomized
+      assert {:ok, result} = CashRegister.process_transaction(10, 100, divisor: 5)
+
+      assert {:ok, denominations} = Parser.parse_change_result(result)
+
+      assert_correct_total(denominations, 90)
+    end
+
+    test "Calculator.calculate with divisor that triggers Greedy" do
+      # 88 is not divisible by 5, so uses Greedy
+      assert {:ok, result} = CashRegister.Calculator.calculate(0, 88, divisor: 5)
+      assert [{"quarter", 3}, {"dime", 1}, {"penny", 3}] = result
+    end
+  end
+
   defp assert_correct_total(denominations, expected_cents) do
     total = calculate_total(denominations)
     assert total == expected_cents
