@@ -12,14 +12,7 @@ defmodule CashRegister.Strategies.Randomized do
 
   @impl true
   def calculate(change_cents, opts \\ []) do
-    # Get denominations based on currency option if provided
-    base_denominations =
-      if Keyword.has_key?(opts, :currency) do
-        Currency.denominations(Keyword.get(opts, :currency))
-      else
-        Currency.denominations()
-      end
-
+    base_denominations = Currency.resolve_denominations(opts)
     denominations = Enum.shuffle(base_denominations)
 
     Greedy.calculate(change_cents, denominations: denominations)

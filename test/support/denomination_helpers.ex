@@ -26,10 +26,10 @@ defmodule CashRegister.DenominationHelpers do
     # Build a lookup map from all supported currencies
     denomination_values = build_denomination_lookup()
 
-    Enum.reduce(denominations, 0, fn {name, count}, acc ->
-      case Map.get(denomination_values, name) do
+    Enum.reduce(denominations, 0, fn {id, count, _singular, _plural}, acc ->
+      case Map.get(denomination_values, id) do
         nil ->
-          raise "Unknown denomination: #{name}"
+          raise "Unknown denomination: #{id}"
 
         value ->
           acc + value * count
@@ -42,6 +42,6 @@ defmodule CashRegister.DenominationHelpers do
     |> Enum.flat_map(fn currency ->
       Currency.denominations(currency)
     end)
-    |> Map.new()
+    |> Map.new(fn {id, value, _singular, _plural} -> {id, value} end)
   end
 end

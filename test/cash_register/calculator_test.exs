@@ -7,8 +7,12 @@ defmodule CashRegister.CalculatorTest do
 
   describe "calculate/3" do
     test "calculates change correctly" do
-      assert {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]} =
-               Calculator.calculate(212, 300)
+      assert {:ok,
+              [
+                {"quarter", 3, "quarter", "quarters"},
+                {"dime", 1, "dime", "dimes"},
+                {"penny", 3, "penny", "pennies"}
+              ]} = Calculator.calculate(212, 300)
     end
 
     test "returns empty list for exact change" do
@@ -35,18 +39,24 @@ defmodule CashRegister.CalculatorTest do
 
     test "custom divisor that triggers Greedy" do
       # 88 is not divisible by 5, so uses Greedy
-      assert {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]} =
-               Calculator.calculate(0, 88, divisor: 5)
+      assert {:ok,
+              [
+                {"quarter", 3, "quarter", "quarters"},
+                {"dime", 1, "dime", "dimes"},
+                {"penny", 3, "penny", "pennies"}
+              ]} = Calculator.calculate(0, 88, divisor: 5)
     end
 
     test "calculates change with EUR currency" do
       # 100 cents change using EUR denominations
-      assert {:ok, [{"euro", 1}]} = Calculator.calculate(0, 100, currency: "EUR")
+      assert {:ok, [{"euro", 1, "euro", "euros"}]} =
+               Calculator.calculate(0, 100, currency: "EUR")
     end
 
     test "calculates change with GBP currency" do
       # 50 cents change using GBP denominations
-      assert {:ok, [{"pence_50", 1}]} = Calculator.calculate(0, 50, currency: "GBP")
+      assert {:ok, [{"pence_50", 1, "50-pence coin", "50-pence coins"}]} =
+               Calculator.calculate(0, 50, currency: "GBP")
     end
 
     test "calculates EUR change with randomized strategy" do

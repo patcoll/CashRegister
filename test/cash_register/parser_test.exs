@@ -59,16 +59,22 @@ defmodule CashRegister.ParserTest do
 
   describe "parse_change_result/1" do
     test "parses multiple denominations" do
-      assert {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]} =
-               Parser.parse_change_result("3 quarters,1 dime,3 pennies")
+      assert {:ok,
+              [
+                {"quarter", 3, "quarter", "quarters"},
+                {"dime", 1, "dime", "dimes"},
+                {"penny", 3, "penny", "pennies"}
+              ]} = Parser.parse_change_result("3 quarters,1 dime,3 pennies")
     end
 
     test "parses single dollar" do
-      assert {:ok, [{"dollar", 1}]} = Parser.parse_change_result("1 dollar")
+      assert {:ok, [{"dollar", 1, "dollar", "dollars"}]} =
+               Parser.parse_change_result("1 dollar")
     end
 
     test "parses multiple pennies" do
-      assert {:ok, [{"penny", 2}]} = Parser.parse_change_result("2 pennies")
+      assert {:ok, [{"penny", 2, "penny", "pennies"}]} =
+               Parser.parse_change_result("2 pennies")
     end
 
     test "parses 'no change'" do

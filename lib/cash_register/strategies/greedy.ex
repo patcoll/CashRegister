@@ -15,26 +15,16 @@ defmodule CashRegister.Strategies.Greedy do
   def calculate(0, _opts), do: []
 
   def calculate(change_cents, opts) when change_cents > 0 do
-    denominations =
-      cond do
-        Keyword.has_key?(opts, :denominations) ->
-          Keyword.get(opts, :denominations)
-
-        Keyword.has_key?(opts, :currency) ->
-          Currency.denominations(Keyword.get(opts, :currency))
-
-        true ->
-          Currency.denominations()
-      end
+    denominations = Currency.resolve_denominations(opts)
 
     denominations
-    |> Enum.reduce({change_cents, []}, fn {name, value}, {remaining, result} ->
+    |> Enum.reduce({change_cents, []}, fn {id, value, singular, plural}, {remaining, result} ->
       count = div(remaining, value)
       new_remaining = rem(remaining, value)
 
       new_result =
         if count > 0 do
-          [{name, count} | result]
+          [{id, count, singular, plural} | result]
         else
           result
         end

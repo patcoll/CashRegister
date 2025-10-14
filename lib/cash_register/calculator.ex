@@ -1,13 +1,16 @@
 defmodule CashRegister.Calculator do
   @moduledoc false
 
-  alias CashRegister.{Config, Currency}
+  alias CashRegister.{ChangeStrategy, Config}
 
   @doc """
   Calculates change for a transaction.
 
-  Returns `{:ok, denominations}` with a list of coin/bill denominations needed,
+  Returns `{:ok, change_items}` with a list of change items (denomination counts),
   or `{:error, reason}` if the transaction is invalid.
+
+  Each change item is a 4-tuple: `{id, count, singular, plural}` where count
+  indicates how many of that denomination to give.
 
   ## Options
 
@@ -15,7 +18,7 @@ defmodule CashRegister.Calculator do
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
   @spec calculate(integer(), integer(), keyword()) ::
-          {:ok, list(Currency.denomination())} | {:error, String.t()}
+          {:ok, list(ChangeStrategy.change_item())} | {:error, String.t()}
   def calculate(owed_cents, paid_cents, opts \\ [])
 
   def calculate(owed_cents, paid_cents, _opts) when owed_cents < 0 or paid_cents < 0 do

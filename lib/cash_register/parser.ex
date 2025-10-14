@@ -78,12 +78,14 @@ defmodule CashRegister.Parser do
   end
 
   @doc """
-  Parses a formatted change string back into denominations.
+  Parses a formatted change string back into change items.
 
-  Returns `{:ok, denominations}` or `{:error, reason}`.
+  Returns `{:ok, change_items}` or `{:error, reason}`.
+
+  Each change item has the count (not value) in position 2.
   """
   @spec parse_change_result(String.t()) ::
-          {:ok, list(CashRegister.Currency.denomination())} | {:error, String.t()}
+          {:ok, list(CashRegister.ChangeStrategy.change_item())} | {:error, String.t()}
   def parse_change_result(result_string) do
     trimmed = String.trim(result_string)
 
@@ -110,26 +112,38 @@ defmodule CashRegister.Parser do
   end
 
   defp parse_denomination_part(part) do
-    case String.split(String.trim(part), " ", parts: 2) do
-      [count_str, name] ->
-        case Integer.parse(count_str) do
-          {count, ""} when count > 0 ->
-            {:ok, {singularize_denomination(name), count}}
-
-          _other ->
-            {:error, :invalid_count}
-        end
-
-      _other ->
-        {:error, :invalid_format}
+    with [count_str, name] <- String.split(String.trim(part), " ", parts: 2),
+         {count, ""} when count > 0 <- Integer.parse(count_str),
+         denomination_id = singularize_denomination(name),
+         {:ok, {id, _value, singular, plural}} <- lookup_denomination_info(denomination_id) do
+      {:ok, {id, count, singular, plural}}
+    else
+      [_] -> {:error, :invalid_format}
+      _ -> {:error, :invalid_count}
     end
   end
 
   defp singularize_denomination(name) do
     cond do
       String.ends_with?(name, "pennies") -> "penny"
+      String.ends_with?(name, " coins") -> String.trim_trailing(name, " coins")
+      String.ends_with?(name, " coin") -> String.trim_trailing(name, " coin")
       String.ends_with?(name, "s") -> String.trim_trailing(name, "s")
       true -> name
+    end
+  end
+
+  defp lookup_denomination_info(id) do
+    # Build a lookup map from all supported currencies
+    denominations =
+      CashRegister.Currency.supported()
+      |> Enum.flat_map(fn currency ->
+        CashRegister.Currency.denominations(currency)
+      end)
+
+    case Enum.find(denominations, fn {denom_id, _value, _singular, _plural} -> denom_id == id end) do
+      nil -> :error
+      denom -> {:ok, denom}
     end
   end
 end

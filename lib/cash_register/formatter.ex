@@ -1,26 +1,23 @@
 defmodule CashRegister.Formatter do
   @moduledoc false
 
-  alias CashRegister.Currency
+  alias CashRegister.ChangeStrategy
 
   @doc """
-  Formats a list of denominations into a comma-separated string.
+  Formats a list of change items into a comma-separated string.
+
+  Each change item should be a 4-tuple: `{id, count, singular, plural}`
+  where count indicates how many of that denomination.
 
   Returns "no change" for an empty list.
   """
-  @spec format(list(Currency.denomination())) :: String.t()
+  @spec format(list(ChangeStrategy.change_item())) :: String.t()
   def format([]), do: "no change"
 
   def format(denominations) do
-    Enum.map_join(denominations, ",", fn {name, count} ->
-      pluralized_name = pluralize(name, count)
-      "#{count} #{pluralized_name}"
+    Enum.map_join(denominations, ",", fn {_id, count, singular, plural} ->
+      display_name = if count == 1, do: singular, else: plural
+      "#{count} #{display_name}"
     end)
   end
-
-  defp pluralize(name, 1), do: name
-
-  defp pluralize("penny", _count), do: "pennies"
-
-  defp pluralize(name, _count), do: "#{name}s"
 end

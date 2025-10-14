@@ -10,11 +10,11 @@ defmodule CashRegister.CurrencyTest do
     end
 
     test "first denomination is dollar" do
-      assert hd(Currency.denominations()) == {"dollar", 100}
+      assert hd(Currency.denominations()) == {"dollar", 100, "dollar", "dollars"}
     end
 
     test "last denomination is penny" do
-      assert List.last(Currency.denominations()) == {"penny", 1}
+      assert List.last(Currency.denominations()) == {"penny", 1, "penny", "pennies"}
     end
   end
 
@@ -22,29 +22,61 @@ defmodule CashRegister.CurrencyTest do
     test "returns USD denominations for USD currency code" do
       denoms = Currency.denominations("USD")
       assert length(denoms) == 5
-      assert hd(denoms) == {"dollar", 100}
+      assert hd(denoms) == {"dollar", 100, "dollar", "dollars"}
     end
 
     test "returns EUR denominations for EUR currency code" do
       denoms = Currency.denominations("EUR")
       assert length(denoms) == 8
-      assert hd(denoms) == {"euro_2", 200}
-      assert {"euro", 100} in denoms
-      assert List.last(denoms) == {"cent", 1}
+      assert hd(denoms) == {"euro_2", 200, "2-euro coin", "2-euro coins"}
+      assert {"euro", 100, "euro", "euros"} in denoms
+      assert List.last(denoms) == {"cent", 1, "cent", "cents"}
     end
 
     test "returns GBP denominations for GBP currency code" do
       denoms = Currency.denominations("GBP")
       assert length(denoms) == 8
-      assert hd(denoms) == {"pound_2", 200}
-      assert {"pound", 100} in denoms
-      assert List.last(denoms) == {"penny", 1}
+      assert hd(denoms) == {"pound_2", 200, "2-pound coin", "2-pound coins"}
+      assert {"pound", 100, "pound", "pounds"} in denoms
+      assert List.last(denoms) == {"penny", 1, "penny", "pennies"}
     end
 
     test "raises ArgumentError for unknown currency code" do
       assert_raise ArgumentError, ~r/unknown currency code/, fn ->
         Currency.denominations("XXX")
       end
+    end
+  end
+
+  describe "resolve_denominations/1" do
+    test "returns default USD denominations with empty opts" do
+      denoms = Currency.resolve_denominations([])
+      assert length(denoms) == 5
+      assert hd(denoms) == {"dollar", 100, "dollar", "dollars"}
+    end
+
+    test "returns EUR denominations when currency option provided" do
+      denoms = Currency.resolve_denominations(currency: "EUR")
+      assert length(denoms) == 8
+      assert hd(denoms) == {"euro_2", 200, "2-euro coin", "2-euro coins"}
+    end
+
+    test "returns GBP denominations when currency option provided" do
+      denoms = Currency.resolve_denominations(currency: "GBP")
+      assert length(denoms) == 8
+      assert hd(denoms) == {"pound_2", 200, "2-pound coin", "2-pound coins"}
+    end
+
+    test "returns custom denominations when provided" do
+      custom = [{"custom", 50}, {"other", 25}]
+      denoms = Currency.resolve_denominations(denominations: custom)
+      assert denoms == custom
+    end
+
+    test "custom denominations take priority over currency option" do
+      custom = [{"custom", 50}]
+      denoms = Currency.resolve_denominations(denominations: custom, currency: "EUR")
+      assert denoms == custom
     end
   end
 
