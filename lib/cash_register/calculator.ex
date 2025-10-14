@@ -1,7 +1,7 @@
 defmodule CashRegister.Calculator do
   @moduledoc false
 
-  alias CashRegister.Config
+  alias CashRegister.{Config, Currency}
 
   @doc """
   Calculates change for a transaction.
@@ -12,9 +12,10 @@ defmodule CashRegister.Calculator do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
+    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
   @spec calculate(integer(), integer(), keyword()) ::
-          {:ok, list(Config.denomination())} | {:error, String.t()}
+          {:ok, list(Currency.denomination())} | {:error, String.t()}
   def calculate(owed_cents, paid_cents, opts \\ [])
 
   def calculate(owed_cents, paid_cents, _opts) when owed_cents < 0 or paid_cents < 0 do
@@ -34,7 +35,7 @@ defmodule CashRegister.Calculator do
         []
       else
         strategy = Config.change_strategy(change_cents, opts)
-        strategy.calculate(change_cents)
+        strategy.calculate(change_cents, opts)
       end
 
     {:ok, result}

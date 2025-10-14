@@ -3,21 +3,6 @@ defmodule CashRegister.ConfigTest do
 
   alias CashRegister.Config
 
-  describe "denominations/0" do
-    test "returns 5 denominations" do
-      denoms = Config.denominations()
-      assert length(denoms) == 5
-    end
-
-    test "first denomination is dollar" do
-      assert hd(Config.denominations()) == {"dollar", 100}
-    end
-
-    test "last denomination is penny" do
-      assert List.last(Config.denominations()) == {"penny", 1}
-    end
-  end
-
   describe "change_strategy/2 with default divisor" do
     test "returns Randomized for values divisible by 3" do
       assert Config.change_strategy(99) == CashRegister.Strategies.Randomized

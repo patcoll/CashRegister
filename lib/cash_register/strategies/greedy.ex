@@ -7,6 +7,8 @@ defmodule CashRegister.Strategies.Greedy do
 
   @behaviour CashRegister.ChangeStrategy
 
+  alias CashRegister.Currency
+
   @impl true
   def calculate(change_cents, opts \\ [])
 
@@ -14,7 +16,16 @@ defmodule CashRegister.Strategies.Greedy do
 
   def calculate(change_cents, opts) when change_cents > 0 do
     denominations =
-      Keyword.get(opts, :denominations, CashRegister.Config.denominations())
+      cond do
+        Keyword.has_key?(opts, :denominations) ->
+          Keyword.get(opts, :denominations)
+
+        Keyword.has_key?(opts, :currency) ->
+          Currency.denominations(Keyword.get(opts, :currency))
+
+        true ->
+          Currency.denominations()
+      end
 
     denominations
     |> Enum.reduce({change_cents, []}, fn {name, value}, {remaining, result} ->

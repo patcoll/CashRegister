@@ -38,5 +38,23 @@ defmodule CashRegister.CalculatorTest do
       assert {:ok, [{"quarter", 3}, {"dime", 1}, {"penny", 3}]} =
                Calculator.calculate(0, 88, divisor: 5)
     end
+
+    test "calculates change with EUR currency" do
+      # 100 cents change using EUR denominations
+      assert {:ok, [{"euro", 1}]} = Calculator.calculate(0, 100, currency: "EUR")
+    end
+
+    test "calculates change with GBP currency" do
+      # 50 cents change using GBP denominations
+      assert {:ok, [{"pence_50", 1}]} = Calculator.calculate(0, 50, currency: "GBP")
+    end
+
+    test "calculates EUR change with randomized strategy" do
+      # 99 cents is divisible by 3, triggers randomized strategy
+      {:ok, result} = Calculator.calculate(0, 99, currency: "EUR")
+
+      # Verify the total is correct regardless of strategy
+      assert_correct_total(result, 99)
+    end
   end
 end

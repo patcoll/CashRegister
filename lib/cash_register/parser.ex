@@ -83,7 +83,7 @@ defmodule CashRegister.Parser do
   Returns `{:ok, denominations}` or `{:error, reason}`.
   """
   @spec parse_change_result(String.t()) ::
-          {:ok, list(CashRegister.Config.denomination())} | {:error, String.t()}
+          {:ok, list(CashRegister.Currency.denomination())} | {:error, String.t()}
   def parse_change_result(result_string) do
     trimmed = String.trim(result_string)
 

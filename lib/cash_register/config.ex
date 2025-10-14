@@ -3,22 +3,6 @@ defmodule CashRegister.Config do
 
   @default_divisor 3
 
-  @denominations [
-    {"dollar", 100},
-    {"quarter", 25},
-    {"dime", 10},
-    {"nickel", 5},
-    {"penny", 1}
-  ]
-
-  @type denomination :: {String.t(), pos_integer()}
-
-  @doc """
-  Returns the US currency denominations in descending order.
-  """
-  @spec denominations() :: list(denomination())
-  def denominations, do: @denominations
-
   @doc """
   Selects the appropriate strategy based on the change amount.
 

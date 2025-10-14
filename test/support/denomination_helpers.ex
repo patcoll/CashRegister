@@ -3,10 +3,12 @@ defmodule CashRegister.DenominationHelpers do
   Shared test helpers for working with denomination lists.
   """
 
-  alias CashRegister.Config
+  alias CashRegister.Currency
 
   @doc """
   Asserts that a list of denominations sums to the expected total in cents.
+
+  Supports multiple currencies by detecting denomination names automatically.
   """
   defmacro assert_correct_total(denominations, expected_cents) do
     quote do
@@ -17,15 +19,29 @@ defmodule CashRegister.DenominationHelpers do
 
   @doc """
   Calculates the total value in cents for a list of denominations.
+
+  Automatically detects the currency based on denomination names.
   """
   def calculate_total(denominations) do
-    Enum.reduce(denominations, 0, fn {name, count}, acc ->
-      value =
-        Config.denominations()
-        |> Enum.find(fn {n, _} -> n == name end)
-        |> elem(1)
+    # Build a lookup map from all supported currencies
+    denomination_values = build_denomination_lookup()
 
-      acc + value * count
+    Enum.reduce(denominations, 0, fn {name, count}, acc ->
+      case Map.get(denomination_values, name) do
+        nil ->
+          raise "Unknown denomination: #{name}"
+
+        value ->
+          acc + value * count
+      end
     end)
+  end
+
+  defp build_denomination_lookup do
+    Currency.supported()
+    |> Enum.flat_map(fn currency ->
+      Currency.denominations(currency)
+    end)
+    |> Map.new()
   end
 end

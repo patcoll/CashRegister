@@ -1,14 +1,14 @@
 defmodule CashRegister.Formatter do
   @moduledoc false
 
-  alias CashRegister.Config
+  alias CashRegister.Currency
 
   @doc """
   Formats a list of denominations into a comma-separated string.
 
   Returns "no change" for an empty list.
   """
-  @spec format(list(Config.denomination())) :: String.t()
+  @spec format(list(Currency.denomination())) :: String.t()
   def format([]), do: "no change"
 
   def format(denominations) do
