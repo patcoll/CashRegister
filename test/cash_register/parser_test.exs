@@ -19,13 +19,55 @@ defmodule CashRegister.ParserTest do
     end
   end
 
+  describe "parse_line/1 - edge cases for precision" do
+    test "parses 0.29 correctly (problematic floating point case)" do
+      assert {:ok, {29, 100}} = Parser.parse_line("0.29,1.00")
+    end
+
+    test "parses 1.5 correctly (single decimal digit with padding)" do
+      assert {:ok, {150, 250}} = Parser.parse_line("1.5,2.5")
+      assert {:ok, {130, 100}} = Parser.parse_line("1.3,1.0")
+    end
+
+    test "parses whole dollar amounts without decimal" do
+      assert {:ok, {500, 1000}} = Parser.parse_line("5,10")
+    end
+
+    test "parses 2.99 correctly (edge of two decimal places)" do
+      assert {:ok, {299, 100}} = Parser.parse_line("2.99,1.00")
+    end
+
+    test "parses zero amounts correctly" do
+      assert {:ok, {0, 100}} = Parser.parse_line("0,1")
+      assert {:ok, {0, 100}} = Parser.parse_line("0.0,1.0")
+      assert {:ok, {0, 100}} = Parser.parse_line("0.00,1.00")
+    end
+  end
+
   describe "parse_line/1 - error cases" do
     test "returns error for invalid format" do
       assert {:error, "invalid line format: invalid"} = Parser.parse_line("invalid")
     end
 
-    test "returns error for negative amounts" do
-      assert {:error, _reason} = Parser.parse_line("-1.00,2.00")
+    test "returns error for negative amounts with clear message" do
+      assert {:error, reason} = Parser.parse_line("-1.00,2.00")
+      assert reason =~ "must be non-negative"
+      assert reason =~ "-1"
+    end
+
+    test "returns error for fractional cents (too many decimal places)" do
+      assert {:error, reason} = Parser.parse_line("1.005,2.00")
+      assert reason =~ "too many decimal places"
+    end
+
+    test "returns error for missing cents after decimal" do
+      assert {:error, reason} = Parser.parse_line("1.,2.00")
+      assert reason =~ "missing cents after decimal point"
+    end
+
+    test "returns error for multiple decimal points" do
+      assert {:error, reason} = Parser.parse_line("1.2.3,2.00")
+      assert reason =~ "multiple decimal points"
     end
 
     test "returns error for 3-element format" do

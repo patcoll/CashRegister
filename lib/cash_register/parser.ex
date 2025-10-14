@@ -64,12 +64,43 @@ defmodule CashRegister.Parser do
   defp parse_amount(amount_str) do
     amount_str = String.trim(amount_str)
 
-    case Float.parse(amount_str) do
-      {amount, ""} when amount >= 0 ->
-        cents = round(amount * 100)
-        {:ok, cents}
+    cond do
+      # Check for missing cents after decimal point: "1."
+      String.ends_with?(amount_str, ".") ->
+        {:error, "missing cents after decimal point: #{amount_str}"}
 
-      {_amount, _} ->
+      # Check for multiple decimal points: "1.2.3"
+      length(String.split(amount_str, ".")) > 2 ->
+        {:error, "invalid amount format (multiple decimal points): #{amount_str}"}
+
+      true ->
+        parse_with_decimal(amount_str)
+    end
+  end
+
+  defp parse_with_decimal(amount_str) do
+    case Decimal.parse(amount_str) do
+      {decimal, ""} ->
+        cond do
+          Decimal.negative?(decimal) ->
+            {:error, "amount must be non-negative, got: #{amount_str}"}
+
+          # Check for more than 2 decimal places by comparing with rounded value
+          not Decimal.equal?(decimal, Decimal.round(decimal, 2)) ->
+            {:error, "too many decimal places (max 2): #{amount_str}"}
+
+          true ->
+            # Convert to cents: multiply by 100 and convert to integer
+            cents =
+              decimal
+              |> Decimal.mult(100)
+              |> Decimal.round(0)
+              |> Decimal.to_integer()
+
+            {:ok, cents}
+        end
+
+      {_decimal, _remaining} ->
         {:error, "invalid amount format: #{amount_str}"}
 
       :error ->

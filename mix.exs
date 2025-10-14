@@ -32,6 +32,7 @@ defmodule CashRegister.MixProject do
 
   defp deps do
     [
+      {:decimal, "~> 2.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.3", only: [:dev, :test], runtime: false}
