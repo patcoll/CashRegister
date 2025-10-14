@@ -8,9 +8,12 @@ defmodule CashRegister.Parser do
   @doc """
   Parses a line of input into {owed_cents, paid_cents}.
 
-  Expected format: "owed,paid"
+  Expected format: "1.00,2.00" (US format with period as decimal separator)
+  or "1,00,2,00" (international format with comma as decimal separator)
 
   ## Examples
+
+  US format (2 elements when split by comma):
 
   ```elixir
   iex> CashRegister.Parser.parse_line("2.12,3.00")
@@ -21,11 +24,34 @@ defmodule CashRegister.Parser do
 
   iex> CashRegister.Parser.parse_line("0.00,1.00")
   {:ok, {0, 100}}
+  ```
 
+  International format (4 elements when split by comma):
+
+  ```elixir
+  iex> CashRegister.Parser.parse_line("2,12,3,00")
+  {:ok, {212, 300}}
+
+  iex> CashRegister.Parser.parse_line("1,50,2,00")
+  {:ok, {150, 200}}
+
+  iex> CashRegister.Parser.parse_line("0,00,1,00")
+  {:ok, {0, 100}}
+  ```
+
+  Error cases:
+
+  ```elixir
   iex> CashRegister.Parser.parse_line("invalid")
   {:error, "invalid line format: invalid"}
 
   iex> {:error, _} = CashRegister.Parser.parse_line("-1.00,2.00")
+
+  iex> CashRegister.Parser.parse_line("1,00,2")
+  {:error, "invalid line format: 1,00,2"}
+
+  iex> CashRegister.Parser.parse_line("1,00,2,00,3")
+  {:error, "invalid line format: 1,00,2,00,3"}
   ```
   """
   @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, String.t()}
@@ -35,6 +61,15 @@ defmodule CashRegister.Parser do
     |> String.split(",")
     |> case do
       [owed_str, paid_str] ->
+        with {:ok, owed} <- parse_amount(owed_str),
+             {:ok, paid} <- parse_amount(paid_str) do
+          {:ok, {owed, paid}}
+        end
+
+      [o1, o2, p1, p2] ->
+        owed_str = "#{o1}.#{o2}"
+        paid_str = "#{p1}.#{p2}"
+
         with {:ok, owed} <- parse_amount(owed_str),
              {:ok, paid} <- parse_amount(paid_str) do
           {:ok, {owed, paid}}
@@ -52,10 +87,30 @@ defmodule CashRegister.Parser do
 
   ## Examples
 
+  US format:
+
   ```elixir
   iex> CashRegister.Parser.parse_lines("2.12,3.00\\n1.00,2.00\\n")
   [{212, 300}, {100, 200}]
+  ```
 
+  International format:
+
+  ```elixir
+  iex> CashRegister.Parser.parse_lines("2,12,3,00\\n1,50,2,00\\n")
+  [{212, 300}, {150, 200}]
+  ```
+
+  Mixed formats:
+
+  ```elixir
+  iex> CashRegister.Parser.parse_lines("2.12,3.00\\n1,50,2,00\\n")
+  [{212, 300}, {150, 200}]
+  ```
+
+  Error handling:
+
+  ```elixir
   iex> CashRegister.Parser.parse_lines("2.12,3.00\\ninvalid\\n1.00,2.00")
   ** (ArgumentError) invalid line format: invalid
   ```
