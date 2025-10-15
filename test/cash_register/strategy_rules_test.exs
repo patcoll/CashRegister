@@ -227,9 +227,11 @@ defmodule CashRegister.StrategyRulesTest do
 
   describe "select_strategy/2 telemetry" do
     setup do
-      # Attach telemetry handler for testing
+      # Attach telemetry handler for testing with unique name per test
+      handler_id = "test-strategy-selection-#{System.unique_integer([:positive])}"
+
       :telemetry.attach(
-        "test-strategy-selection",
+        handler_id,
         [:cash_register, :strategy, :selected],
         fn event_name, measurements, metadata, pid ->
           send(pid, {:telemetry_event, event_name, measurements, metadata})
@@ -237,7 +239,7 @@ defmodule CashRegister.StrategyRulesTest do
         self()
       )
 
-      on_exit(fn -> :telemetry.detach("test-strategy-selection") end)
+      on_exit(fn -> :telemetry.detach(handler_id) end)
 
       :ok
     end
