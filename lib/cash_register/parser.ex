@@ -15,8 +15,6 @@ defmodule CashRegister.Parser do
 
   Supports both US format ("1.00,2.00") and international format ("1,00,2,00").
   Format is automatically detected based on comma count.
-
-  Returns `{:ok, {owed_cents, paid_cents}}` or `{:error, reason}`.
   """
   @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, Error.t()}
   def parse_line(line) do
@@ -47,10 +45,7 @@ defmodule CashRegister.Parser do
   @doc """
   Parses multiple lines from file content.
 
-  Skips empty lines. Returns a list of transactions if all lines are valid,
-  or returns the first error tuple if any line is invalid.
-
-  Supports mixed US and international formats in the same input.
+  Skips empty lines and supports mixed US and international formats.
   """
   @spec parse_lines(String.t()) :: list(transaction()) | {:error, Error.t()}
   def parse_lines(content) do

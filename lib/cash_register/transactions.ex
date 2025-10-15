@@ -12,8 +12,6 @@ defmodule CashRegister.Transactions do
   @doc """
   Processes a transaction from owed/paid amounts to formatted change.
 
-  Returns `{:ok, formatted_change}` or `{:error, reason}`.
-
   Emits telemetry events:
   - `[:cash_register, :transaction, :start]`
   - `[:cash_register, :transaction, :stop]` (with duration, status)

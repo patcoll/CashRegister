@@ -81,12 +81,8 @@ defmodule CashRegister.Currency do
   @doc """
   Returns currency denominations in descending order.
 
-  Each denomination is a 4-tuple: `{id, value, singular_display, plural_display}`
-
   Defaults to US Dollar denominations for backward compatibility. Pass a currency
   code like "EUR" or "GBP" to get denominations for that currency.
-
-  Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is unknown.
   """
   @spec denominations(currency_code()) ::
           {:ok, list(denomination())} | {:error, Error.t()}
@@ -110,8 +106,6 @@ defmodule CashRegister.Currency do
 
   This is the primary function used by strategies to determine which denominations
   to use when calculating change.
-
-  Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is invalid.
   """
   @spec resolve_denominations(keyword()) ::
           {:ok, list(denomination())} | {:error, Error.t()}
@@ -130,9 +124,6 @@ defmodule CashRegister.Currency do
 
   @doc """
   Returns information about a specific currency.
-
-  Returns a map with keys `:name`, `:symbol`, and `:denominations`, or `nil`
-  if the currency code is not supported.
   """
   @spec info(currency_code()) :: currency_info() | nil
   def info(currency_code) when is_binary(currency_code) do

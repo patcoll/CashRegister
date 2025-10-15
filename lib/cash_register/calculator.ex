@@ -6,9 +6,6 @@ defmodule CashRegister.Calculator do
   @doc """
   Calculates change for a transaction.
 
-  Returns `{:ok, change_items}` with a list of change items (denomination counts),
-  or `{:error, reason}` if the transaction is invalid.
-
   Each change item is a 4-tuple: `{id, count, singular, plural}` where count
   indicates how many of that denomination to give.
 

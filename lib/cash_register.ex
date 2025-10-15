@@ -12,9 +12,6 @@ defmodule CashRegister do
 
   Each line in the file should contain comma-separated owed,paid amounts.
 
-  Returns a list of formatted strings if all transactions succeed, or the first
-  error encountered (including file read errors).
-
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
@@ -58,8 +55,6 @@ defmodule CashRegister do
   Each line in the input file should contain comma-separated owed,paid amounts.
   Each line in the output file will contain the formatted change for that transaction.
 
-  Returns `:ok` if successful, or `{:error, reason}` if reading, processing, or writing fails.
-
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
@@ -87,8 +82,6 @@ defmodule CashRegister do
 
   @doc """
   Processes a single transaction and returns formatted change.
-
-  Returns `{:ok, formatted_change}` or `{:error, reason}`.
 
   ## Options
 
