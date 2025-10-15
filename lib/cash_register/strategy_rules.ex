@@ -25,8 +25,10 @@ defmodule CashRegister.StrategyRules do
   can be provided via the `:strategy_rules` option.
   """
 
+  alias CashRegister.Error
+
   @type rule :: (non_neg_integer(), keyword() ->
-                   {:ok, {module(), map()}} | {:ok, module()} | {:error, String.t()} | nil)
+                   {:ok, {module(), map()}} | {:ok, module()} | {:error, Error.t()} | nil)
 
   @doc """
   Returns the default list of strategy rules.
@@ -48,13 +50,13 @@ defmodule CashRegister.StrategyRules do
   `{:error, reason}` if divisor is invalid, or `nil` if not divisible.
   """
   @spec divisor_match(non_neg_integer(), keyword()) ::
-          {:ok, {module(), map()}} | {:error, String.t()} | nil
+          {:ok, {module(), map()}} | {:error, Error.t()} | nil
   def divisor_match(change_cents, opts) do
     divisor = Keyword.get(opts, :divisor, 3)
 
     cond do
       not is_integer(divisor) or divisor <= 0 ->
-        {:error, "divisor must be a positive integer, got: #{inspect(divisor)}"}
+        {:error, {:invalid_divisor, %{divisor: divisor}}}
 
       rem(change_cents, divisor) == 0 ->
         {:ok, {CashRegister.Strategies.Randomized, %{divisor: divisor, rule: :divisor_match}}}
@@ -80,7 +82,7 @@ defmodule CashRegister.StrategyRules do
 
   If all rules return nil, defaults to `CashRegister.Strategies.Greedy`.
   """
-  @spec select_strategy(non_neg_integer(), keyword()) :: {:ok, module()} | {:error, String.t()}
+  @spec select_strategy(non_neg_integer(), keyword()) :: {:ok, module()} | {:error, Error.t()}
   def select_strategy(change_cents, opts \\ []) do
     rules = Keyword.get(opts, :strategy_rules, default_rules())
 

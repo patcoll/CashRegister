@@ -44,8 +44,7 @@ defmodule CashRegister.CurrencyTest do
     end
 
     test "returns error for unknown currency code" do
-      assert {:error, message} = Currency.denominations("XXX")
-      assert message =~ "unknown currency code"
+      assert {:error, {:unknown_currency, %{currency: "XXX"}}} = Currency.denominations("XXX")
     end
   end
 

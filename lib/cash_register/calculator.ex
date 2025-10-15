@@ -1,7 +1,7 @@
 defmodule CashRegister.Calculator do
   @moduledoc false
 
-  alias CashRegister.{ChangeStrategy, StrategyRules}
+  alias CashRegister.{ChangeStrategy, Error, StrategyRules}
 
   @doc """
   Calculates change for a transaction.
@@ -18,15 +18,15 @@ defmodule CashRegister.Calculator do
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
   @spec calculate(integer(), integer(), keyword()) ::
-          {:ok, list(ChangeStrategy.change_item())} | {:error, String.t()}
+          {:ok, list(ChangeStrategy.change_item())} | {:error, Error.t()}
   def calculate(owed_cents, paid_cents, opts \\ [])
 
   def calculate(owed_cents, paid_cents, _opts) when owed_cents < 0 or paid_cents < 0 do
-    {:error, "amounts must be non-negative: owed=#{owed_cents}, paid=#{paid_cents}"}
+    {:error, {:negative_amount, %{owed: owed_cents, paid: paid_cents}}}
   end
 
   def calculate(owed_cents, paid_cents, _opts) when paid_cents < owed_cents do
-    {:error, "insufficient payment: paid #{paid_cents} cents < owed #{owed_cents} cents"}
+    {:error, {:insufficient_payment, %{owed: owed_cents, paid: paid_cents}}}
   end
 
   def calculate(owed_cents, paid_cents, opts)

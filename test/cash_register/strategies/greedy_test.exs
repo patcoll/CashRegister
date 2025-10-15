@@ -34,9 +34,8 @@ defmodule CashRegister.Strategies.GreedyTest do
         {"nickel", 5, "nickel", "nickels"}
       ]
 
-      assert {:error, message} = Greedy.calculate(167, denominations: denominations_without_penny)
-      assert message =~ "cannot make exact change"
-      assert message =~ "2 cents remaining"
+      assert {:error, {:cannot_make_exact_change, %{remaining: 2, change_cents: 167}}} =
+               Greedy.calculate(167, denominations: denominations_without_penny)
     end
 
     test "returns error for single cent when no penny denomination" do
@@ -44,9 +43,8 @@ defmodule CashRegister.Strategies.GreedyTest do
         {"nickel", 5, "nickel", "nickels"}
       ]
 
-      assert {:error, message} = Greedy.calculate(1, denominations: denominations_without_penny)
-      assert message =~ "cannot make exact change"
-      assert message =~ "1 cents remaining"
+      assert {:error, {:cannot_make_exact_change, %{remaining: 1, change_cents: 1}}} =
+               Greedy.calculate(1, denominations: denominations_without_penny)
     end
   end
 end

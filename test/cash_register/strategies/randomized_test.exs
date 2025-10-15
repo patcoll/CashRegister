@@ -26,11 +26,8 @@ defmodule CashRegister.Strategies.RandomizedTest do
         {"nickel", 5, "nickel", "nickels"}
       ]
 
-      assert {:error, message} =
+      assert {:error, {:cannot_make_exact_change, %{remaining: 2, change_cents: 167}}} =
                Randomized.calculate(167, denominations: denominations_without_penny)
-
-      assert message =~ "cannot make exact change"
-      assert message =~ "2 cents remaining"
     end
 
     test "returns error for single cent when no penny denomination" do
@@ -38,11 +35,8 @@ defmodule CashRegister.Strategies.RandomizedTest do
         {"nickel", 5, "nickel", "nickels"}
       ]
 
-      assert {:error, message} =
+      assert {:error, {:cannot_make_exact_change, %{remaining: 1, change_cents: 1}}} =
                Randomized.calculate(1, denominations: denominations_without_penny)
-
-      assert message =~ "cannot make exact change"
-      assert message =~ "1 cents remaining"
     end
   end
 
@@ -63,11 +57,9 @@ defmodule CashRegister.Strategies.RandomizedTest do
       {:ok, result1} = Randomized.calculate(change_cents, random_seed: 42)
       {:ok, result2} = Randomized.calculate(change_cents, random_seed: 123)
 
-      # Both should still be valid
       assert_correct_total(result1, change_cents)
       assert_correct_total(result2, change_cents)
 
-      # Results should be lists (not empty for 99 cents)
       assert is_list(result1) and length(result1) > 0
       assert is_list(result2) and length(result2) > 0
     end

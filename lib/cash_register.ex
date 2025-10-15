@@ -5,7 +5,7 @@ defmodule CashRegister do
   Processes transactions and calculates change.
   """
 
-  alias CashRegister.{Parser, Transactions}
+  alias CashRegister.{Error, Parser, Transactions}
 
   @doc """
   Processes a file containing transactions and returns formatted change output.
@@ -20,20 +20,17 @@ defmodule CashRegister do
     * `:divisor` - Custom divisor for strategy selection (default: from config)
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
-  @spec process_file(String.t(), keyword()) :: list(String.t()) | {:error, String.t()}
+  @spec process_file(String.t(), keyword()) :: list(String.t()) | {:error, Error.t()}
   def process_file(file_path, opts \\ []) do
     with {:ok, content} <- File.read(file_path),
          {:ok, transactions} <- validate_parse_result(Parser.parse_lines(content)) do
       process_transactions(transactions, opts)
     else
-      {:error, :enoent} ->
-        {:error, "cannot read file #{file_path}: no such file or directory"}
-
       {:error, reason} when is_atom(reason) ->
-        {:error, "cannot read file #{file_path}: #{:file.format_error(reason)}"}
+        {:error, {:file_read_error, %{path: file_path, reason: reason}}}
 
-      {:error, message} when is_binary(message) ->
-        {:error, message}
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -69,7 +66,7 @@ defmodule CashRegister do
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
   @spec process_file_and_output(String.t(), String.t(), keyword()) ::
-          :ok | {:error, String.t()}
+          :ok | {:error, Error.t()}
   def process_file_and_output(input_path, output_path, opts \\ []) do
     case process_file(input_path, opts) do
       {:error, _} = error ->
@@ -83,7 +80,7 @@ defmodule CashRegister do
             :ok
 
           {:error, reason} ->
-            {:error, "cannot write file #{output_path}: #{:file.format_error(reason)}"}
+            {:error, {:file_write_error, %{path: output_path, reason: reason}}}
         end
     end
   end
@@ -99,7 +96,7 @@ defmodule CashRegister do
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
   """
   @spec process_transaction(integer(), integer(), keyword()) ::
-          {:ok, String.t()} | {:error, String.t()}
+          {:ok, String.t()} | {:error, Error.t()}
   def process_transaction(owed_cents, paid_cents, opts \\ []) do
     Transactions.transact(owed_cents, paid_cents, opts)
   end

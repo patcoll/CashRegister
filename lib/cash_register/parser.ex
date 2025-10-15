@@ -3,6 +3,8 @@ defmodule CashRegister.Parser do
   Parses input containing transaction data.
   """
 
+  alias CashRegister.Error
+
   @type transaction :: {non_neg_integer(), non_neg_integer()}
 
   # Maximum allowed amount in cents ($100,000.00)
@@ -16,7 +18,7 @@ defmodule CashRegister.Parser do
 
   Returns `{:ok, {owed_cents, paid_cents}}` or `{:error, reason}`.
   """
-  @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, String.t()}
+  @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, Error.t()}
   def parse_line(line) do
     line
     |> String.trim()
@@ -38,7 +40,7 @@ defmodule CashRegister.Parser do
         end
 
       _invalid ->
-        {:error, "invalid line format: #{line}"}
+        {:error, {:invalid_line_format, %{line: line}}}
     end
   end
 
@@ -50,7 +52,7 @@ defmodule CashRegister.Parser do
 
   Supports mixed US and international formats in the same input.
   """
-  @spec parse_lines(String.t()) :: list(transaction()) | {:error, String.t()}
+  @spec parse_lines(String.t()) :: list(transaction()) | {:error, Error.t()}
   def parse_lines(content) do
     results =
       content
@@ -59,7 +61,6 @@ defmodule CashRegister.Parser do
 
     case Enum.find(results, &match?({:error, _}, &1)) do
       nil ->
-        # No errors, unwrap all the :ok tuples
         Enum.map(results, fn {:ok, transaction} -> transaction end)
 
       error ->
@@ -71,13 +72,14 @@ defmodule CashRegister.Parser do
     amount_str = String.trim(amount_str)
 
     cond do
-      # Check for missing cents after decimal point: "1."
       String.ends_with?(amount_str, ".") ->
-        {:error, "missing cents after decimal point: #{amount_str}"}
+        {:error,
+         {:invalid_amount_format,
+          %{amount: amount_str, reason: "missing cents after decimal point"}}}
 
-      # Check for multiple decimal points: "1.2.3"
       length(String.split(amount_str, ".")) > 2 ->
-        {:error, "invalid amount format (multiple decimal points): #{amount_str}"}
+        {:error,
+         {:invalid_amount_format, %{amount: amount_str, reason: "multiple decimal points"}}}
 
       true ->
         parse_with_decimal(amount_str)
@@ -89,26 +91,25 @@ defmodule CashRegister.Parser do
       {decimal, ""} ->
         cond do
           Decimal.negative?(decimal) ->
-            {:error, "amount must be non-negative, got: #{amount_str}"}
+            {:error, {:invalid_amount_format, %{amount: amount_str, reason: "negative amount"}}}
 
-          # Check for more than 2 decimal places by comparing with rounded value
           not Decimal.equal?(decimal, Decimal.round(decimal, 2)) ->
-            {:error, "too many decimal places (max 2): #{amount_str}"}
+            {:error,
+             {:invalid_amount_format, %{amount: amount_str, reason: "too many decimal places"}}}
 
           true ->
             convert_and_validate_cents(decimal)
         end
 
       {_decimal, remaining} when remaining != "" ->
-        {:error, "invalid amount format (trailing characters): #{amount_str}"}
+        {:error, {:invalid_amount_format, %{amount: amount_str, reason: "trailing characters"}}}
 
       :error ->
-        {:error, "invalid amount (not a number): #{amount_str}"}
+        {:error, {:invalid_amount_format, %{amount: amount_str, reason: "not a number"}}}
     end
   end
 
   defp convert_and_validate_cents(decimal) do
-    # Convert to cents: multiply by 100 and convert to integer
     cents =
       decimal
       |> Decimal.mult(100)
@@ -118,7 +119,10 @@ defmodule CashRegister.Parser do
     if cents > @max_amount do
       max_amount_str = :erlang.float_to_binary(@max_amount / 100, decimals: 2)
       actual_amount_str = :erlang.float_to_binary(cents / 100, decimals: 2)
-      {:error, "amount exceeds maximum allowed (#{max_amount_str}), got: #{actual_amount_str}"}
+
+      {:error,
+       {:invalid_amount_format,
+        %{amount: actual_amount_str, reason: "exceeds maximum allowed (#{max_amount_str})"}}}
     else
       {:ok, cents}
     end

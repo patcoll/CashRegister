@@ -19,6 +19,8 @@ defmodule CashRegister.Currency do
   **value** in position 2 (what it's worth).
   """
 
+  alias CashRegister.Error
+
   @default_currency "USD"
 
   @currencies %{
@@ -87,13 +89,11 @@ defmodule CashRegister.Currency do
   Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is unknown.
   """
   @spec denominations(currency_code()) ::
-          {:ok, list(denomination())} | {:error, String.t()}
+          {:ok, list(denomination())} | {:error, Error.t()}
   def denominations(currency_code \\ @default_currency) when is_binary(currency_code) do
     case Map.get(@currencies, currency_code) do
       nil ->
-        {:error,
-         "unknown currency code: #{inspect(currency_code)}. " <>
-           "Available currencies: #{inspect(Map.keys(@currencies))}"}
+        {:error, {:unknown_currency, %{currency: currency_code}}}
 
       currency_info ->
         {:ok, currency_info.denominations}
@@ -114,7 +114,7 @@ defmodule CashRegister.Currency do
   Returns `{:ok, denominations}` or `{:error, reason}` if the currency code is invalid.
   """
   @spec resolve_denominations(keyword()) ::
-          {:ok, list(denomination())} | {:error, String.t()}
+          {:ok, list(denomination())} | {:error, Error.t()}
   def resolve_denominations(opts) when is_list(opts) do
     cond do
       Keyword.has_key?(opts, :denominations) ->

@@ -41,27 +41,23 @@ defmodule CashRegister.StrategyRulesTest do
 
   describe "select_strategy/2 with invalid divisor" do
     test "returns error for zero divisor" do
-      assert {:error, message} = StrategyRules.select_strategy(100, divisor: 0)
-      assert message =~ "divisor must be a positive integer"
-      assert message =~ "got: 0"
+      assert {:error, {:invalid_divisor, %{divisor: 0}}} =
+               StrategyRules.select_strategy(100, divisor: 0)
     end
 
     test "returns error for negative divisor" do
-      assert {:error, message} = StrategyRules.select_strategy(100, divisor: -5)
-      assert message =~ "divisor must be a positive integer"
-      assert message =~ "got: -5"
+      assert {:error, {:invalid_divisor, %{divisor: -5}}} =
+               StrategyRules.select_strategy(100, divisor: -5)
     end
 
     test "returns error for non-integer divisor" do
-      assert {:error, message} = StrategyRules.select_strategy(100, divisor: 3.5)
-      assert message =~ "divisor must be a positive integer"
-      assert message =~ "got: 3.5"
+      assert {:error, {:invalid_divisor, %{divisor: 3.5}}} =
+               StrategyRules.select_strategy(100, divisor: 3.5)
     end
 
     test "returns error for non-numeric divisor" do
-      assert {:error, message} = StrategyRules.select_strategy(100, divisor: "three")
-      assert message =~ "divisor must be a positive integer"
-      assert message =~ ~s(got: "three")
+      assert {:error, {:invalid_divisor, %{divisor: "three"}}} =
+               StrategyRules.select_strategy(100, divisor: "three")
     end
   end
 
@@ -206,8 +202,8 @@ defmodule CashRegister.StrategyRulesTest do
     end
 
     test "returns error for invalid divisor" do
-      assert {:error, message} = StrategyRules.divisor_match(100, divisor: 0)
-      assert message =~ "divisor must be a positive integer"
+      assert {:error, {:invalid_divisor, %{divisor: 0}}} =
+               StrategyRules.divisor_match(100, divisor: 0)
     end
   end
 
@@ -252,10 +248,8 @@ defmodule CashRegister.StrategyRulesTest do
       assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], measurements,
                       metadata}
 
-      # Check measurements
       assert measurements.change_cents == 99
 
-      # Check metadata
       assert metadata.strategy == "CashRegister.Strategies.Randomized"
       assert metadata.divisor == 3
       assert metadata.rule == :divisor_match
@@ -279,10 +273,8 @@ defmodule CashRegister.StrategyRulesTest do
       assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], measurements,
                       metadata}
 
-      # Check measurements
       assert measurements.change_cents == 100
 
-      # Check metadata
       assert metadata.strategy == "CashRegister.Strategies.Greedy"
       assert metadata.divisor == 3
       assert metadata.rule == :default_fallback

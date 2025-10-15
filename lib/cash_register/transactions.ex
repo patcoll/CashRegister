@@ -7,7 +7,7 @@ defmodule CashRegister.Transactions do
   """
 
   require Logger
-  alias CashRegister.{Calculator, Formatter}
+  alias CashRegister.{Calculator, Error, Formatter}
 
   @doc """
   Processes a transaction from owed/paid amounts to formatted change.
@@ -24,7 +24,7 @@ defmodule CashRegister.Transactions do
     * `:currency` - Currency code (e.g., "USD", "EUR", "GBP")
   """
   @spec transact(integer(), integer(), keyword()) ::
-          {:ok, String.t()} | {:error, String.t()}
+          {:ok, String.t()} | {:error, Error.t()}
   def transact(owed_cents, paid_cents, opts \\ []) do
     transaction_id = generate_transaction_id()
     start_time = System.monotonic_time()
@@ -73,14 +73,15 @@ defmodule CashRegister.Transactions do
     )
   end
 
-  defp emit_stop_event({:error, reason} = _result, duration, metadata) do
+  defp emit_stop_event({:error, {error_type, error_metadata}} = _result, duration, metadata) do
     :telemetry.execute(
       [:cash_register, :transaction, :stop],
       %{duration: duration},
       Map.merge(metadata, %{
         status: :error,
-        error_reason: reason,
-        error_type: categorize_error(reason)
+        error_type: error_type,
+        error_metadata: error_metadata,
+        error_category: categorize_error({error_type, error_metadata})
       })
     )
   end
@@ -97,24 +98,40 @@ defmodule CashRegister.Transactions do
     end
   end
 
-  defp log_transaction({:error, reason}, metadata, duration) do
+  defp log_transaction({:error, {error_type, error_metadata}}, metadata, duration) do
     Logger.warning("Transaction failed",
       owed: metadata.owed_cents,
       paid: metadata.paid_cents,
       currency: metadata.currency,
-      error: reason,
-      error_type: categorize_error(reason),
+      error_type: error_type,
+      error_metadata: error_metadata,
+      error_category: categorize_error({error_type, error_metadata}),
       duration_us: duration
     )
   end
 
-  defp categorize_error(reason) when is_binary(reason) do
-    cond do
-      String.contains?(reason, "non-negative") -> :validation_error
-      String.contains?(reason, "insufficient") -> :validation_error
-      String.contains?(reason, "unknown currency") -> :currency_error
-      String.contains?(reason, "divisor") -> :validation_error
-      true -> :system_error
+  defp categorize_error({error_type, _metadata}) do
+    case error_type do
+      type
+      when type in [
+             :negative_amount,
+             :insufficient_payment,
+             :invalid_line_format,
+             :invalid_amount_format,
+             :invalid_divisor
+           ] ->
+        :validation_error
+
+      :unknown_currency ->
+        :currency_error
+
+      type
+      when type in [
+             :cannot_make_exact_change,
+             :file_read_error,
+             :file_write_error
+           ] ->
+        :system_error
     end
   end
 

@@ -20,20 +20,19 @@ defmodule CashRegister.CalculatorTest do
     end
 
     test "returns error for insufficient payment" do
-      assert {:error, "insufficient payment: paid 200 cents < owed 300 cents"} =
+      assert {:error, {:insufficient_payment, %{owed: 300, paid: 200}}} =
                Calculator.calculate(300, 200)
     end
 
     test "returns error for negative amounts" do
-      {:error, reason} = Calculator.calculate(-100, 200)
-      assert reason =~ "must be non-negative"
+      assert {:error, {:negative_amount, %{owed: -100, paid: 200}}} =
+               Calculator.calculate(-100, 200)
     end
 
     test "accepts custom divisor option" do
       # 100 is divisible by 5, so uses Randomized strategy
       assert {:ok, result} = Calculator.calculate(10, 100, divisor: 5)
 
-      # Just verify it returns valid change
       assert_correct_total(result, 90)
     end
 
@@ -63,7 +62,6 @@ defmodule CashRegister.CalculatorTest do
       # 99 cents is divisible by 3, triggers randomized strategy
       {:ok, result} = Calculator.calculate(0, 99, currency: "EUR")
 
-      # Verify the total is correct regardless of strategy
       assert_correct_total(result, 99)
     end
   end

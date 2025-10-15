@@ -59,48 +59,51 @@ defmodule CashRegister.ParserTest do
 
   describe "parse_line/1 - error cases" do
     test "returns error for invalid format" do
-      assert {:error, "invalid line format: invalid"} = Parser.parse_line("invalid")
+      assert {:error, {:invalid_line_format, %{line: "invalid"}}} = Parser.parse_line("invalid")
     end
 
     test "returns error for negative amounts with clear message" do
-      assert {:error, reason} = Parser.parse_line("-1.00,2.00")
-      assert reason =~ "must be non-negative"
-      assert reason =~ "-1"
+      assert {:error, {:invalid_amount_format, %{amount: "-1.00", reason: "negative amount"}}} =
+               Parser.parse_line("-1.00,2.00")
     end
 
     test "returns error for fractional cents (too many decimal places)" do
-      assert {:error, reason} = Parser.parse_line("1.005,2.00")
-      assert reason =~ "too many decimal places"
+      assert {:error,
+              {:invalid_amount_format, %{amount: "1.005", reason: "too many decimal places"}}} =
+               Parser.parse_line("1.005,2.00")
     end
 
     test "returns error for missing cents after decimal" do
-      assert {:error, reason} = Parser.parse_line("1.,2.00")
-      assert reason =~ "missing cents after decimal point"
+      assert {:error,
+              {:invalid_amount_format,
+               %{amount: "1.", reason: "missing cents after decimal point"}}} =
+               Parser.parse_line("1.,2.00")
     end
 
     test "returns error for multiple decimal points" do
-      assert {:error, reason} = Parser.parse_line("1.2.3,2.00")
-      assert reason =~ "multiple decimal points"
+      assert {:error,
+              {:invalid_amount_format, %{amount: "1.2.3", reason: "multiple decimal points"}}} =
+               Parser.parse_line("1.2.3,2.00")
     end
 
     test "returns error for amount with trailing characters" do
-      assert {:error, reason} = Parser.parse_line("1.50abc,2.00")
-      assert reason =~ "trailing characters"
-      assert reason =~ "1.50abc"
+      assert {:error,
+              {:invalid_amount_format, %{amount: "1.50abc", reason: "trailing characters"}}} =
+               Parser.parse_line("1.50abc,2.00")
     end
 
     test "returns error for non-numeric amount" do
-      assert {:error, reason} = Parser.parse_line("abc,2.00")
-      assert reason =~ "not a number"
-      assert reason =~ "abc"
+      assert {:error, {:invalid_amount_format, %{amount: "abc", reason: "not a number"}}} =
+               Parser.parse_line("abc,2.00")
     end
 
     test "returns error for 3-element format" do
-      assert {:error, "invalid line format: 1,00,2"} = Parser.parse_line("1,00,2")
+      assert {:error, {:invalid_line_format, %{line: "1,00,2"}}} = Parser.parse_line("1,00,2")
     end
 
     test "returns error for 5-element format" do
-      assert {:error, "invalid line format: 1,00,2,00,3"} = Parser.parse_line("1,00,2,00,3")
+      assert {:error, {:invalid_line_format, %{line: "1,00,2,00,3"}}} =
+               Parser.parse_line("1,00,2,00,3")
     end
 
     test "parses amount just under maximum limit ($99,999.99)" do
@@ -112,15 +115,17 @@ defmodule CashRegister.ParserTest do
     end
 
     test "returns error for amount just over maximum limit (100000.01)" do
-      assert {:error, reason} = Parser.parse_line("100000.01,100000.01")
-      assert reason =~ "amount exceeds maximum allowed"
-      assert reason =~ "100000.00"
+      assert {:error,
+              {:invalid_amount_format,
+               %{amount: "100000.01", reason: "exceeds maximum allowed (100000.00)"}}} =
+               Parser.parse_line("100000.01,100000.01")
     end
 
     test "returns error for very large amount (1000000.00)" do
-      assert {:error, reason} = Parser.parse_line("1000000.00,1.00")
-      assert reason =~ "amount exceeds maximum allowed"
-      assert reason =~ "100000.00"
+      assert {:error,
+              {:invalid_amount_format,
+               %{amount: "1000000.00", reason: "exceeds maximum allowed (100000.00)"}}} =
+               Parser.parse_line("1000000.00,1.00")
     end
   end
 
@@ -149,13 +154,13 @@ defmodule CashRegister.ParserTest do
     test "returns first error for invalid lines" do
       result = Parser.parse_lines("2.12,3.00\ninvalid\n1.00,2.00")
 
-      assert {:error, "invalid line format: invalid"} = result
+      assert {:error, {:invalid_line_format, %{line: "invalid"}}} = result
     end
 
     test "returns first error when all lines invalid" do
       result = Parser.parse_lines("invalid1\ninvalid2")
 
-      assert {:error, "invalid line format: invalid1"} = result
+      assert {:error, {:invalid_line_format, %{line: "invalid1"}}} = result
     end
 
     test "returns empty list for empty content" do

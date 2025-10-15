@@ -17,6 +17,8 @@ defmodule CashRegister.ChangeStrategy do
     * `:denominations` - Custom list of denominations to use (overrides currency)
   """
 
+  alias CashRegister.Error
+
   @type change_item ::
           {id :: String.t(), count :: non_neg_integer(), singular :: String.t(),
            plural :: String.t()}
@@ -32,5 +34,5 @@ defmodule CashRegister.ChangeStrategy do
   Accepts optional keyword arguments for configuration.
   """
   @callback calculate(change_cents :: non_neg_integer(), opts :: keyword()) ::
-              {:ok, list(change_item())} | {:error, String.t()}
+              {:ok, list(change_item())} | {:error, Error.t()}
 end

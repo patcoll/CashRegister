@@ -46,27 +46,29 @@ defmodule CashRegister.TransactionsTest do
     test "emits telemetry events on error" do
       assert {:error, _} = Transactions.transact(300, 200)
 
-      # Insufficient payment
       assert_receive {:telemetry, [:cash_register, :transaction, :start], %{}, _}
 
       assert_receive {:telemetry, [:cash_register, :transaction, :stop], %{duration: _}, metadata}
 
       assert metadata.status == :error
-      assert metadata.error_type == :validation_error
+      assert metadata.error_type == :insufficient_payment
+      assert metadata.error_category == :validation_error
     end
 
     test "categorizes currency errors" do
       assert {:error, _} = Transactions.transact(100, 200, currency: "INVALID")
 
       assert_receive {:telemetry, [:cash_register, :transaction, :stop], _, metadata}
-      assert metadata.error_type == :currency_error
+      assert metadata.error_type == :unknown_currency
+      assert metadata.error_category == :currency_error
     end
 
     test "categorizes validation errors for negative amounts" do
       assert {:error, _} = Transactions.transact(-100, 200)
 
       assert_receive {:telemetry, [:cash_register, :transaction, :stop], _, metadata}
-      assert metadata.error_type == :validation_error
+      assert metadata.error_type == :negative_amount
+      assert metadata.error_category == :validation_error
     end
 
     test "includes transaction_id in metadata" do
@@ -103,14 +105,14 @@ defmodule CashRegister.TransactionsTest do
     end
 
     test "preserves existing functionality for error cases" do
-      assert {:error, reason} = Transactions.transact(-100, 200)
-      assert reason =~ "non-negative"
+      assert {:error, {:negative_amount, %{owed: -100, paid: 200}}} =
+               Transactions.transact(-100, 200)
 
-      assert {:error, reason} = Transactions.transact(300, 200)
-      assert reason =~ "insufficient"
+      assert {:error, {:insufficient_payment, %{owed: 300, paid: 200}}} =
+               Transactions.transact(300, 200)
 
-      assert {:error, reason} = Transactions.transact(100, 200, currency: "INVALID")
-      assert reason =~ "unknown currency"
+      assert {:error, {:unknown_currency, %{currency: "INVALID"}}} =
+               Transactions.transact(100, 200, currency: "INVALID")
     end
 
     test "transaction_ids are unique across transactions" do

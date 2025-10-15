@@ -23,7 +23,7 @@ defmodule CashRegister.Strategies.Greedy do
 
         if remaining != 0 do
           {:error,
-           "cannot make exact change: #{remaining} cents remaining with given denominations"}
+           {:cannot_make_exact_change, %{remaining: remaining, change_cents: change_cents}}}
         else
           {:ok, Enum.reverse(result)}
         end

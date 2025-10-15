@@ -9,7 +9,7 @@ defmodule CashRegisterTest do
     end
 
     test "returns error for insufficient payment" do
-      assert {:error, "insufficient payment: paid 200 cents < owed 300 cents"} =
+      assert {:error, {:insufficient_payment, %{owed: 300, paid: 200}}} =
                CashRegister.process_transaction(300, 200)
     end
 
@@ -55,9 +55,8 @@ defmodule CashRegisterTest do
     end
 
     test "returns error for nonexistent file" do
-      assert {:error, message} = CashRegister.process_file("nonexistent_file.txt")
-      assert message =~ "cannot read file"
-      assert message =~ "nonexistent_file.txt"
+      assert {:error, {:file_read_error, %{path: "nonexistent_file.txt", reason: :enoent}}} =
+               CashRegister.process_file("nonexistent_file.txt")
     end
 
     test "processes empty file", %{tmp_dir: tmp_dir} do
@@ -78,9 +77,8 @@ defmodule CashRegisterTest do
 
       result = CashRegister.process_file(file_path)
 
-      # Should return the first parse error, not a list
-      assert {:error, message} = result
-      assert message =~ "invalid"
+      assert {:error, {:invalid_amount_format, %{amount: "invalid", reason: "not a number"}}} =
+               result
     end
 
     test "accepts custom divisor option for file processing", %{tmp_dir: tmp_dir} do
@@ -95,7 +93,6 @@ defmodule CashRegisterTest do
       assert is_list(results)
       assert [result] = results
 
-      # Should still total to 90 cents
       assert {:ok, denominations} = parse_change_result(result)
       assert_correct_total(denominations, 90)
     end
@@ -124,11 +121,8 @@ defmodule CashRegisterTest do
     test "returns error for nonexistent input file", %{tmp_dir: tmp_dir} do
       output_path = Path.join(tmp_dir, "output.txt")
 
-      assert {:error, message} =
+      assert {:error, {:file_read_error, %{path: "nonexistent.txt", reason: :enoent}}} =
                CashRegister.process_file_and_output("nonexistent.txt", output_path)
-
-      assert message =~ "cannot read file"
-      assert message =~ "nonexistent.txt"
 
       refute File.exists?(output_path)
     end
@@ -139,10 +133,8 @@ defmodule CashRegisterTest do
 
       File.write!(input_path, "invalid,data,format")
 
-      assert {:error, message} =
+      assert {:error, {:invalid_line_format, %{line: "invalid,data,format"}}} =
                CashRegister.process_file_and_output(input_path, output_path)
-
-      assert message =~ "invalid"
 
       refute File.exists?(output_path)
     end
@@ -153,10 +145,8 @@ defmodule CashRegisterTest do
 
       File.write!(input_path, "5.00,3.00")
 
-      assert {:error, message} =
+      assert {:error, {:insufficient_payment, %{owed: 500, paid: 300}}} =
                CashRegister.process_file_and_output(input_path, output_path)
-
-      assert message =~ "insufficient payment"
 
       refute File.exists?(output_path)
     end
@@ -217,10 +207,8 @@ defmodule CashRegisterTest do
 
       File.write!(input_path, "1.00,2.00")
 
-      assert {:error, message} = CashRegister.process_file_and_output(input_path, output_path)
-
-      assert message =~ "cannot write file"
-      assert message =~ output_path
+      assert {:error, {:file_write_error, %{path: ^output_path, reason: :enoent}}} =
+               CashRegister.process_file_and_output(input_path, output_path)
     end
 
     test "handles multiple transactions correctly", %{tmp_dir: tmp_dir} do
