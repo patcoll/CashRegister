@@ -24,5 +24,29 @@ defmodule CashRegister.Strategies.GreedyTest do
     test "handles all pennies" do
       assert {:ok, [{"penny", 3, "penny", "pennies"}]} = Greedy.calculate(3)
     end
+
+    test "returns error when exact change cannot be made" do
+      denominations_without_penny = [
+        {"dollar", 100, "dollar", "dollars"},
+        {"half_dollar", 50, "half-dollar", "half-dollars"},
+        {"quarter", 25, "quarter", "quarters"},
+        {"dime", 10, "dime", "dimes"},
+        {"nickel", 5, "nickel", "nickels"}
+      ]
+
+      assert {:error, message} = Greedy.calculate(167, denominations: denominations_without_penny)
+      assert message =~ "cannot make exact change"
+      assert message =~ "2 cents remaining"
+    end
+
+    test "returns error for single cent when no penny denomination" do
+      denominations_without_penny = [
+        {"nickel", 5, "nickel", "nickels"}
+      ]
+
+      assert {:error, message} = Greedy.calculate(1, denominations: denominations_without_penny)
+      assert message =~ "cannot make exact change"
+      assert message =~ "1 cents remaining"
+    end
   end
 end

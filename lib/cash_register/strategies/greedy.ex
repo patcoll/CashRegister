@@ -17,13 +17,16 @@ defmodule CashRegister.Strategies.Greedy do
   def calculate(change_cents, opts) when change_cents > 0 do
     case Currency.resolve_denominations(opts) do
       {:ok, denominations} ->
-        result =
+        {remaining, result} =
           denominations
           |> Enum.reduce({change_cents, []}, &add_denomination/2)
-          |> elem(1)
-          |> Enum.reverse()
 
-        {:ok, result}
+        if remaining != 0 do
+          {:error,
+           "cannot make exact change: #{remaining} cents remaining with given denominations"}
+        else
+          {:ok, Enum.reverse(result)}
+        end
 
       {:error, reason} ->
         {:error, reason}

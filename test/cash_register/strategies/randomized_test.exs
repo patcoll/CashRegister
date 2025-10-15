@@ -16,6 +16,34 @@ defmodule CashRegister.Strategies.RandomizedTest do
     test "returns empty list for zero change" do
       assert {:ok, []} = Randomized.calculate(0)
     end
+
+    test "returns error when exact change cannot be made" do
+      denominations_without_penny = [
+        {"dollar", 100, "dollar", "dollars"},
+        {"half_dollar", 50, "half-dollar", "half-dollars"},
+        {"quarter", 25, "quarter", "quarters"},
+        {"dime", 10, "dime", "dimes"},
+        {"nickel", 5, "nickel", "nickels"}
+      ]
+
+      assert {:error, message} =
+               Randomized.calculate(167, denominations: denominations_without_penny)
+
+      assert message =~ "cannot make exact change"
+      assert message =~ "2 cents remaining"
+    end
+
+    test "returns error for single cent when no penny denomination" do
+      denominations_without_penny = [
+        {"nickel", 5, "nickel", "nickels"}
+      ]
+
+      assert {:error, message} =
+               Randomized.calculate(1, denominations: denominations_without_penny)
+
+      assert message =~ "cannot make exact change"
+      assert message =~ "1 cents remaining"
+    end
   end
 
   describe "calculate/2 with random_seed" do
