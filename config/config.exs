@@ -7,6 +7,10 @@ config :cash_register,
   # Reduce this in production to control log volume
   log_sample_rate: 1.0
 
+config :logger, :default_formatter,
+  format: "[$level] $message $metadata\n",
+  metadata: :all
+
 # Import environment-specific config
 if File.exists?("config/#{config_env()}.exs") do
   import_config "#{config_env()}.exs"
