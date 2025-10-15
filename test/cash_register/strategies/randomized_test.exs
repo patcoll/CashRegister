@@ -50,5 +50,23 @@ defmodule CashRegister.Strategies.RandomizedTest do
 
       assert_correct_total(result, change_cents)
     end
+
+    test "seeded calculation does not pollute global random state" do
+      # Establish a baseline random state
+      :rand.uniform(1_000_000)
+
+      # Save the state before our seeded calculation
+      state_before = :rand.export_seed()
+
+      # Call randomized calculation with a seed
+      {:ok, _result} = Randomized.calculate(99, random_seed: 42)
+
+      # Get the state after our calculation
+      state_after = :rand.export_seed()
+
+      # If the random state was properly restored, both states should be identical
+      assert state_before == state_after,
+             "Random state was polluted by seeded calculation"
+    end
   end
 end
