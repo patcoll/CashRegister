@@ -52,12 +52,6 @@ defmodule CashRegister.CalculatorTest do
                Calculator.calculate(0, 100, currency: "EUR")
     end
 
-    test "calculates change with GBP currency" do
-      # 50 cents change using GBP denominations
-      assert {:ok, [{"pence_50", 1, "50-pence coin", "50-pence coins"}]} =
-               Calculator.calculate(0, 50, currency: "GBP")
-    end
-
     test "calculates EUR change with randomized strategy" do
       # 99 cents is divisible by 3, triggers randomized strategy
       {:ok, result} = Calculator.calculate(0, 99, currency: "EUR")

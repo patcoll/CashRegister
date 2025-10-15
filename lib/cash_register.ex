@@ -15,7 +15,7 @@ defmodule CashRegister do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
+    * `:currency` - Currency code (e.g., "USD", "EUR") for denomination selection
   """
   @spec process_file(String.t(), keyword()) :: list(String.t()) | {:error, Error.t()}
   def process_file(file_path, opts \\ []) do
@@ -58,7 +58,7 @@ defmodule CashRegister do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
+    * `:currency` - Currency code (e.g., "USD", "EUR") for denomination selection
   """
   @spec process_file_and_output(String.t(), String.t(), keyword()) ::
           :ok | {:error, Error.t()}
@@ -86,7 +86,7 @@ defmodule CashRegister do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
+    * `:currency` - Currency code (e.g., "USD", "EUR") for denomination selection
   """
   @spec process_transaction(integer(), integer(), keyword()) ::
           {:ok, String.t()} | {:error, Error.t()}

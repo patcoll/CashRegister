@@ -48,20 +48,6 @@ defmodule CashRegister.Currency do
         {"cent_2", 2, "2-cent coin", "2-cent coins"},
         {"cent", 1, "cent", "cents"}
       ]
-    },
-    "GBP" => %{
-      name: "British Pound",
-      symbol: "£",
-      denominations: [
-        {"pound_2", 200, "2-pound coin", "2-pound coins"},
-        {"pound", 100, "pound", "pounds"},
-        {"pence_50", 50, "50-pence coin", "50-pence coins"},
-        {"pence_20", 20, "20-pence coin", "20-pence coins"},
-        {"pence_10", 10, "10-pence coin", "10-pence coins"},
-        {"pence_5", 5, "5-pence coin", "5-pence coins"},
-        {"pence_2", 2, "2-pence coin", "2-pence coins"},
-        {"penny", 1, "penny", "pennies"}
-      ]
     }
   }
 
@@ -82,7 +68,7 @@ defmodule CashRegister.Currency do
   Returns currency denominations in descending order.
 
   Defaults to US Dollar denominations for backward compatibility. Pass a currency
-  code like "EUR" or "GBP" to get denominations for that currency.
+  code like "EUR" to get denominations for that currency.
   """
   @spec denominations(currency_code()) ::
           {:ok, list(denomination())} | {:error, Error.t()}

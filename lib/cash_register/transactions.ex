@@ -19,7 +19,7 @@ defmodule CashRegister.Transactions do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP")
+    * `:currency` - Currency code (e.g., "USD", "EUR")
   """
   @spec transact(integer(), integer(), keyword()) ::
           {:ok, String.t()} | {:error, Error.t()}

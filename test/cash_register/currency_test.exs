@@ -35,14 +35,6 @@ defmodule CashRegister.CurrencyTest do
       assert List.last(denoms) == {"cent", 1, "cent", "cents"}
     end
 
-    test "returns GBP denominations for GBP currency code" do
-      {:ok, denoms} = Currency.denominations("GBP")
-      assert length(denoms) == 8
-      assert hd(denoms) == {"pound_2", 200, "2-pound coin", "2-pound coins"}
-      assert {"pound", 100, "pound", "pounds"} in denoms
-      assert List.last(denoms) == {"penny", 1, "penny", "pennies"}
-    end
-
     test "returns error for unknown currency code" do
       assert {:error, {:unknown_currency, %{currency: "XXX"}}} = Currency.denominations("XXX")
     end
@@ -59,12 +51,6 @@ defmodule CashRegister.CurrencyTest do
       {:ok, denoms} = Currency.resolve_denominations(currency: "EUR")
       assert length(denoms) == 8
       assert hd(denoms) == {"euro_2", 200, "2-euro coin", "2-euro coins"}
-    end
-
-    test "returns GBP denominations when currency option provided" do
-      {:ok, denoms} = Currency.resolve_denominations(currency: "GBP")
-      assert length(denoms) == 8
-      assert hd(denoms) == {"pound_2", 200, "2-pound coin", "2-pound coins"}
     end
 
     test "returns custom denominations when provided" do
@@ -85,8 +71,7 @@ defmodule CashRegister.CurrencyTest do
       currencies = Currency.supported()
       assert "USD" in currencies
       assert "EUR" in currencies
-      assert "GBP" in currencies
-      assert length(currencies) == 3
+      assert length(currencies) == 2
     end
 
     test "returns sorted list" do

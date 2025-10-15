@@ -13,7 +13,7 @@ defmodule CashRegister.ChangeStrategy do
 
   ## Options
 
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") to determine denominations
+    * `:currency` - Currency code (e.g., "USD", "EUR") to determine denominations
     * `:denominations` - Custom list of denominations to use (overrides currency)
   """
 

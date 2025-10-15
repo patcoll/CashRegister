@@ -90,16 +90,12 @@ CashRegister.process_file("sample_input.txt", divisor: 10)
 
 ### International Currency Support
 
-Support for EUR and GBP currencies:
+Support for EUR currency:
 
 ```elixir
 # Use Euro denominations
 CashRegister.process_transaction(212, 300, currency: "EUR")
 # {:ok, "1 euro,1 10-cent coin,2 cents"}
-
-# Use British Pound denominations
-CashRegister.process_transaction(212, 300, currency: "GBP")
-# {:ok, "50-pence coin,2 20-pence coins,2 5-pence coins,8 pennies"}
 ```
 
 ## How It Works
@@ -116,7 +112,7 @@ The system uses a Strategy pattern with an extensible rules pipeline:
 - `Parser` - Converts CSV input to integers (cents using Decimal library)
 - `Calculator` - Orchestrates strategy selection and change calculation
 - `StrategyRules` - Extensible rules pipeline for strategy selection
-- `Currency` - Provides denomination sets for USD, EUR, and GBP
+- `Currency` - Provides denomination sets for USD and EUR
 - `Formatter` - Converts denominations to readable strings
 
 ### Extensible Rules Pipeline
@@ -151,7 +147,7 @@ Tests cover:
 - Both calculation strategies (Greedy and Randomized)
 - Output formatting and pluralization
 - Extensible rules pipeline and custom rules
-- International currency support (USD, EUR, GBP)
+- International currency support (USD, EUR)
 - File processing with error handling
 - Edge cases (exact change, negative amounts, invalid input, divisor validation)
 

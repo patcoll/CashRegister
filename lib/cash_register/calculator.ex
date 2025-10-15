@@ -12,7 +12,7 @@ defmodule CashRegister.Calculator do
   ## Options
 
     * `:divisor` - Custom divisor for strategy selection (default: from config)
-    * `:currency` - Currency code (e.g., "USD", "EUR", "GBP") for denomination selection
+    * `:currency` - Currency code (e.g., "USD", "EUR") for denomination selection
   """
   @spec calculate(integer(), integer(), keyword()) ::
           {:ok, list(ChangeStrategy.change_item())} | {:error, Error.t()}
