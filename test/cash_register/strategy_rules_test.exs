@@ -66,14 +66,24 @@ defmodule CashRegister.StrategyRulesTest do
   end
 
   describe "select_strategy/2 with custom rules" do
-    test "uses custom rule that always matches" do
-      always_randomized = fn _cents, _opts -> {:ok, Randomized} end
+    test "uses custom rule that always matches (with metadata)" do
+      always_randomized = fn _cents, _opts -> {:ok, {Randomized, %{rule: :always}}} end
 
       assert {:ok, Randomized} =
                StrategyRules.select_strategy(100, strategy_rules: [always_randomized])
 
       assert {:ok, Randomized} =
                StrategyRules.select_strategy(1, strategy_rules: [always_randomized])
+    end
+
+    test "uses custom rule without metadata" do
+      simple_rule = fn _cents, _opts -> {:ok, Randomized} end
+
+      assert {:ok, Randomized} =
+               StrategyRules.select_strategy(100, strategy_rules: [simple_rule])
+
+      assert {:ok, Randomized} =
+               StrategyRules.select_strategy(1, strategy_rules: [simple_rule])
     end
 
     test "uses custom rule that never matches" do
@@ -168,26 +178,35 @@ defmodule CashRegister.StrategyRulesTest do
     end
   end
 
-  describe "divisor_rule/2" do
-    test "returns {:ok, Randomized} for values divisible by default divisor (3)" do
-      assert {:ok, Randomized} == StrategyRules.divisor_rule(99, [])
-      assert {:ok, Randomized} == StrategyRules.divisor_rule(3, [])
-      assert {:ok, Randomized} == StrategyRules.divisor_rule(300, [])
+  describe "divisor_match/2" do
+    test "returns {:ok, {Randomized, metadata}} for values divisible by default divisor (3)" do
+      assert {:ok, {Randomized, metadata}} = StrategyRules.divisor_match(99, [])
+      assert metadata.divisor == 3
+      assert metadata.rule == :divisor_match
+
+      assert {:ok, {Randomized, metadata}} = StrategyRules.divisor_match(3, [])
+      assert metadata.divisor == 3
+
+      assert {:ok, {Randomized, metadata}} = StrategyRules.divisor_match(300, [])
+      assert metadata.divisor == 3
     end
 
     test "returns nil for values not divisible by default divisor (3)" do
-      assert nil == StrategyRules.divisor_rule(88, [])
-      assert nil == StrategyRules.divisor_rule(100, [])
-      assert nil == StrategyRules.divisor_rule(1, [])
+      assert nil == StrategyRules.divisor_match(88, [])
+      assert nil == StrategyRules.divisor_match(100, [])
+      assert nil == StrategyRules.divisor_match(1, [])
     end
 
     test "respects custom divisor from opts" do
-      assert {:ok, Randomized} == StrategyRules.divisor_rule(100, divisor: 5)
-      assert nil == StrategyRules.divisor_rule(88, divisor: 5)
+      assert {:ok, {Randomized, metadata}} = StrategyRules.divisor_match(100, divisor: 5)
+      assert metadata.divisor == 5
+      assert metadata.rule == :divisor_match
+
+      assert nil == StrategyRules.divisor_match(88, divisor: 5)
     end
 
     test "returns error for invalid divisor" do
-      assert {:error, message} = StrategyRules.divisor_rule(100, divisor: 0)
+      assert {:error, message} = StrategyRules.divisor_match(100, divisor: 0)
       assert message =~ "divisor must be a positive integer"
     end
   end
@@ -203,9 +222,113 @@ defmodule CashRegister.StrategyRulesTest do
     test "default rules work correctly" do
       [rule] = StrategyRules.default_rules()
 
-      # Test that the rule behaves like divisor_rule
-      assert {:ok, Randomized} == rule.(99, [])
+      # Test that the rule behaves like divisor_match
+      assert {:ok, {Randomized, metadata}} = rule.(99, [])
+      assert metadata.divisor == 3
       assert nil == rule.(100, [])
+    end
+  end
+
+  describe "select_strategy/2 telemetry" do
+    setup do
+      # Attach telemetry handler for testing
+      :telemetry.attach(
+        "test-strategy-selection",
+        [:cash_register, :strategy, :selected],
+        fn event_name, measurements, metadata, pid ->
+          send(pid, {:telemetry_event, event_name, measurements, metadata})
+        end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach("test-strategy-selection") end)
+
+      :ok
+    end
+
+    test "emits telemetry event when divisor rule matches" do
+      assert {:ok, Randomized} = StrategyRules.select_strategy(99)
+
+      assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], measurements,
+                      metadata}
+
+      # Check measurements
+      assert measurements.change_cents == 99
+
+      # Check metadata
+      assert metadata.strategy == "CashRegister.Strategies.Randomized"
+      assert metadata.divisor == 3
+      assert metadata.rule == :divisor_match
+      assert metadata.change_cents == 99
+    end
+
+    test "emits telemetry event with custom divisor" do
+      assert {:ok, Randomized} = StrategyRules.select_strategy(100, divisor: 5)
+
+      assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], _measurements,
+                      metadata}
+
+      assert metadata.strategy == "CashRegister.Strategies.Randomized"
+      assert metadata.divisor == 5
+      assert metadata.rule == :divisor_match
+    end
+
+    test "emits telemetry event when falling back to Greedy" do
+      assert {:ok, Greedy} = StrategyRules.select_strategy(100)
+
+      assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], measurements,
+                      metadata}
+
+      # Check measurements
+      assert measurements.change_cents == 100
+
+      # Check metadata
+      assert metadata.strategy == "CashRegister.Strategies.Greedy"
+      assert metadata.divisor == 3
+      assert metadata.rule == :default_fallback
+      assert metadata.change_cents == 100
+    end
+
+    test "emits telemetry with custom rule metadata" do
+      custom_rule = fn cents, _opts ->
+        if cents > 5_000,
+          do: {:ok, {Randomized, %{rule: :large_amount, threshold: 5_000, reason: "big sale"}}}
+      end
+
+      assert {:ok, Randomized} =
+               StrategyRules.select_strategy(10_000, strategy_rules: [custom_rule])
+
+      assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], _measurements,
+                      metadata}
+
+      # Custom rule metadata should be merged
+      assert metadata.rule == :large_amount
+      assert metadata.threshold == 5_000
+      assert metadata.reason == "big sale"
+      assert metadata.strategy == "CashRegister.Strategies.Randomized"
+    end
+
+    test "emits telemetry for rules without metadata" do
+      simple_rule = fn cents, _opts ->
+        if cents > 1_000, do: {:ok, Randomized}
+      end
+
+      assert {:ok, Randomized} =
+               StrategyRules.select_strategy(5_000, strategy_rules: [simple_rule])
+
+      assert_receive {:telemetry_event, [:cash_register, :strategy, :selected], _measurements,
+                      metadata}
+
+      # Should have default telemetry metadata even without rule metadata
+      assert metadata.strategy == "CashRegister.Strategies.Randomized"
+      assert metadata.divisor == 3
+      assert metadata.change_cents == 5_000
+    end
+
+    test "does not emit telemetry on error" do
+      assert {:error, _} = StrategyRules.select_strategy(100, divisor: 0)
+
+      refute_receive {:telemetry_event, _, _, _}, 100
     end
   end
 end
