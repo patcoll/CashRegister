@@ -8,6 +8,7 @@ defmodule CashRegister.MixProject do
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      escript: [main_module: CashRegister.CLI],
       deps: deps(),
       preferred_cli_env: ["test.watch": :test, format: :test, dialyzer: :test],
       dialyzer: dialyzer()
