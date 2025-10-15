@@ -105,8 +105,7 @@ defmodule CashRegister.StrategyRules do
         metadata =
           Map.merge(rule_metadata, %{
             strategy: inspect(strategy),
-            change_cents: change_cents,
-            divisor: opts[:divisor] || 3
+            change_cents: change_cents
           })
 
         :telemetry.execute(

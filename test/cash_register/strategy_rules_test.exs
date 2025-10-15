@@ -276,7 +276,6 @@ defmodule CashRegister.StrategyRulesTest do
       assert measurements.change_cents == 100
 
       assert metadata.strategy == "CashRegister.Strategies.Greedy"
-      assert metadata.divisor == 3
       assert metadata.rule == :default_fallback
       assert metadata.change_cents == 100
     end
@@ -313,7 +312,6 @@ defmodule CashRegister.StrategyRulesTest do
 
       # Should have default telemetry metadata even without rule metadata
       assert metadata.strategy == "CashRegister.Strategies.Randomized"
-      assert metadata.divisor == 3
       assert metadata.change_cents == 5_000
     end
 
