@@ -48,7 +48,6 @@ defmodule CashRegister do
 
     case Enum.find(results, &match?({:error, _}, &1)) do
       nil ->
-        # No errors, unwrap all the :ok tuples
         Enum.map(results, fn {:ok, formatted} -> formatted end)
 
       error ->

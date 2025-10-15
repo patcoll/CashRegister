@@ -84,7 +84,6 @@ defmodule CashRegister.StrategyRules do
   def select_strategy(change_cents, opts \\ []) do
     rules = Keyword.get(opts, :strategy_rules, default_rules())
 
-    # Evaluate rules and extract strategy + metadata
     result =
       Enum.reduce_while(
         rules,
@@ -99,7 +98,6 @@ defmodule CashRegister.StrategyRules do
         end
       )
 
-    # Emit telemetry and return
     case result do
       {:ok, {strategy, rule_metadata}} ->
         metadata =

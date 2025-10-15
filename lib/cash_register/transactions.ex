@@ -26,11 +26,9 @@ defmodule CashRegister.Transactions do
   @spec transact(integer(), integer(), keyword()) ::
           {:ok, String.t()} | {:error, String.t()}
   def transact(owed_cents, paid_cents, opts \\ []) do
-    # Generate transaction context
     transaction_id = generate_transaction_id()
     start_time = System.monotonic_time()
 
-    # Build metadata for telemetry
     metadata = %{
       transaction_id: transaction_id,
       owed_cents: owed_cents,
@@ -38,32 +36,25 @@ defmodule CashRegister.Transactions do
       currency: opts[:currency] || "USD"
     }
 
-    # Set logger context
     Logger.metadata(transaction_id: transaction_id)
 
-    # Emit start event
     :telemetry.execute(
       [:cash_register, :transaction, :start],
-      %{system_time: System.system_time()},
+      %{},
       metadata
     )
 
-    # Execute core transaction logic
     result = execute_transaction(owed_cents, paid_cents, opts)
 
-    # Calculate duration
     duration = System.monotonic_time() - start_time
 
-    # Emit stop event with results
     emit_stop_event(result, duration, metadata)
 
-    # Log transaction
     log_transaction(result, metadata, duration)
 
     result
   end
 
-  # Core transaction execution
   defp execute_transaction(owed_cents, paid_cents, opts) do
     case Calculator.calculate(owed_cents, paid_cents, opts) do
       {:ok, denominations} -> {:ok, Formatter.format(denominations)}
@@ -71,7 +62,6 @@ defmodule CashRegister.Transactions do
     end
   end
 
-  # Emit telemetry stop event
   defp emit_stop_event({:ok, _formatted} = _result, duration, metadata) do
     :telemetry.execute(
       [:cash_register, :transaction, :stop],
@@ -95,11 +85,9 @@ defmodule CashRegister.Transactions do
     )
   end
 
-  # Log transaction results
   defp log_transaction({:ok, formatted}, metadata, duration) do
     if should_log_success?() do
       Logger.info("Transaction succeeded",
-        transaction_id: metadata.transaction_id,
         owed: metadata.owed_cents,
         paid: metadata.paid_cents,
         currency: metadata.currency,
@@ -111,7 +99,6 @@ defmodule CashRegister.Transactions do
 
   defp log_transaction({:error, reason}, metadata, duration) do
     Logger.warning("Transaction failed",
-      transaction_id: metadata.transaction_id,
       owed: metadata.owed_cents,
       paid: metadata.paid_cents,
       currency: metadata.currency,
@@ -121,7 +108,6 @@ defmodule CashRegister.Transactions do
     )
   end
 
-  # Categorize errors for metrics
   defp categorize_error(reason) when is_binary(reason) do
     cond do
       String.contains?(reason, "non-negative") -> :validation_error
@@ -132,7 +118,6 @@ defmodule CashRegister.Transactions do
     end
   end
 
-  # Generate unique transaction ID
   defp generate_transaction_id do
     :crypto.strong_rand_bytes(8)
     |> Base.encode16(case: :lower)
