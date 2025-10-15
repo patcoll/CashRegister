@@ -5,7 +5,7 @@ defmodule CashRegister do
   Processes transactions and calculates change.
   """
 
-  alias CashRegister.{Calculator, Formatter, Parser}
+  alias CashRegister.{Parser, Transactions}
 
   @doc """
   Processes a file containing transactions and returns formatted change output.
@@ -41,7 +41,10 @@ defmodule CashRegister do
   defp validate_parse_result(transactions), do: {:ok, transactions}
 
   defp process_transactions(transactions, opts) do
-    results = Enum.map(transactions, &calculate_and_format(&1, opts))
+    results =
+      Enum.map(transactions, fn {owed, paid} ->
+        Transactions.transact(owed, paid, opts)
+      end)
 
     case Enum.find(results, &match?({:error, _}, &1)) do
       nil ->
@@ -66,13 +69,6 @@ defmodule CashRegister do
   @spec process_transaction(integer(), integer(), keyword()) ::
           {:ok, String.t()} | {:error, String.t()}
   def process_transaction(owed_cents, paid_cents, opts \\ []) do
-    calculate_and_format({owed_cents, paid_cents}, opts)
-  end
-
-  defp calculate_and_format({owed_cents, paid_cents}, opts) do
-    case Calculator.calculate(owed_cents, paid_cents, opts) do
-      {:ok, denominations} -> {:ok, Formatter.format(denominations)}
-      {:error, reason} -> {:error, reason}
-    end
+    Transactions.transact(owed_cents, paid_cents, opts)
   end
 end
