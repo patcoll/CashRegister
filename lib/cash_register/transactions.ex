@@ -134,8 +134,7 @@ defmodule CashRegister.Transactions do
   end
 
   defp generate_transaction_id do
-    :crypto.strong_rand_bytes(8)
-    |> Base.encode16(case: :lower)
+    Uniq.UUID.uuid7()
   end
 
   # Sample successful transactions to reduce log volume

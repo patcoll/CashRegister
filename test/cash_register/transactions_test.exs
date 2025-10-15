@@ -76,9 +76,11 @@ defmodule CashRegister.TransactionsTest do
 
       assert_receive {:telemetry, [:cash_register, :transaction, :start], _, metadata}
       assert is_binary(metadata.transaction_id)
-      assert byte_size(metadata.transaction_id) == 16
 
-      # 8 bytes hex encoded
+      assert String.match?(
+               metadata.transaction_id,
+               ~r/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+             )
     end
 
     test "includes currency in metadata" do

@@ -35,6 +35,7 @@ defmodule CashRegister.MixProject do
     [
       {:decimal, "~> 2.1"},
       {:telemetry, "~> 1.3"},
+      {:uniq, "~> 0.6"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.3", only: [:dev, :test], runtime: false}
