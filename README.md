@@ -4,6 +4,28 @@ Calculates change for cash transactions using smart denomination strategies.
 
 ## Installation
 
+This project uses `.tool-versions` to specify required Elixir and Erlang versions. Install them using either asdf or mise (mise recommended):
+
+### Using asdf
+
+Install [asdf](https://asdf-vm.com/guide/getting-started.html), then:
+
+```bash
+asdf plugin add elixir
+asdf plugin add erlang
+asdf install
+```
+
+### Using mise
+
+Install [mise](https://mise.jdx.dev/getting-started.html), then:
+
+```bash
+mise install
+```
+
+### Install dependencies
+
 ```bash
 mix deps.get
 ```
