@@ -47,7 +47,7 @@ This creates a standalone `cash_register` executable that can be run without Eli
 
 **Options:**
 - `--divisor N`, `-d N` - Custom divisor for strategy selection (default: 3)
-- `--currency CODE`, `-c CODE` - Currency code: USD, EUR, GBP (default: USD)
+- `--currency CODE`, `-c CODE` - Currency code: USD, EUR (default: USD)
 - `--help`, `-h` - Show help message
 - `--version`, `-v` - Show version information
 
@@ -64,7 +64,7 @@ This creates a standalone `cash_register` executable that can be run without Eli
 ./cash_register input.txt output.txt --currency EUR
 
 # Combine options
-./cash_register input.txt output.txt -d 5 -c GBP
+./cash_register input.txt output.txt -d 5 -c EUR
 
 # Show help
 ./cash_register --help

@@ -14,7 +14,7 @@ defmodule CashRegister.CLI do
   ## Options
 
     * `--divisor N`, `-d N` - Custom divisor for strategy selection (default: 3)
-    * `--currency CODE`, `-c CODE` - Currency code: USD, EUR, GBP (default: USD)
+    * `--currency CODE`, `-c CODE` - Currency code: USD, EUR (default: USD)
     * `--help`, `-h` - Show this help message
     * `--version`, `-v` - Show version information
 
@@ -23,7 +23,7 @@ defmodule CashRegister.CLI do
       cash_register input.txt output.txt
       cash_register input.txt output.txt --divisor 5
       cash_register input.txt output.txt --currency EUR
-      cash_register input.txt output.txt -d 5 -c GBP
+      cash_register input.txt output.txt -d 5 -c EUR
   """
 
   @doc """
