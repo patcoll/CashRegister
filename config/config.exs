@@ -8,7 +8,6 @@ config :cash_register,
   log_sample_rate: 1.0
 
 config :logger, :default_formatter,
-  format: "[$level] $message $metadata\n",
   metadata: :all
 
 # Import environment-specific config
