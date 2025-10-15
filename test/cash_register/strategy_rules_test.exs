@@ -4,6 +4,15 @@ defmodule CashRegister.StrategyRulesTest do
   alias CashRegister.StrategyRules
   alias CashRegister.Strategies.{Greedy, Randomized}
 
+  # Helper to drain mailbox of any pending messages
+  defp flush_mailbox do
+    receive do
+      _ -> flush_mailbox()
+    after
+      0 -> :ok
+    end
+  end
+
   describe "select_strategy/2 with default divisor rule" do
     test "returns Randomized for values divisible by 3" do
       assert {:ok, Randomized} = StrategyRules.select_strategy(99)
@@ -318,6 +327,9 @@ defmodule CashRegister.StrategyRulesTest do
     end
 
     test "does not emit telemetry on error" do
+      # Flush any pending telemetry events from other async tests
+      flush_mailbox()
+
       assert {:error, _} = StrategyRules.select_strategy(100, divisor: 0)
 
       refute_receive {:telemetry_event, _, _, _}, 100
