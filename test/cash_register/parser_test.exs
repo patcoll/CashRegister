@@ -11,14 +11,6 @@ defmodule CashRegister.ParserTest do
     end
   end
 
-  describe "parse_line/1 - international format" do
-    test "parses international format with commas" do
-      assert {:ok, {212, 300}} = Parser.parse_line("2,12,3,00")
-      assert {:ok, {150, 200}} = Parser.parse_line("1,50,2,00")
-      assert {:ok, {0, 100}} = Parser.parse_line("0,00,1,00")
-    end
-  end
-
   describe "parse_line/1 - edge cases for precision" do
     test "parses 0.29 correctly (problematic floating point case)" do
       assert {:ok, {29, 100}} = Parser.parse_line("0.29,1.00")
@@ -135,20 +127,6 @@ defmodule CashRegister.ParserTest do
                {212, 300},
                {100, 200}
              ] = Parser.parse_lines("2.12,3.00\n1.00,2.00\n")
-    end
-
-    test "parses international format lines" do
-      assert [
-               {212, 300},
-               {150, 200}
-             ] = Parser.parse_lines("2,12,3,00\n1,50,2,00\n")
-    end
-
-    test "parses mixed format lines" do
-      assert [
-               {212, 300},
-               {150, 200}
-             ] = Parser.parse_lines("2.12,3.00\n1,50,2,00\n")
     end
 
     test "returns first error for invalid lines" do

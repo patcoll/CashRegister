@@ -7,14 +7,12 @@ defmodule CashRegister.Parser do
 
   @type transaction :: {non_neg_integer(), non_neg_integer()}
 
-  # Maximum allowed amount in cents ($100,000.00)
   @max_amount 10_000_000
 
   @doc """
   Parses a line of input into {owed_cents, paid_cents}.
 
-  Supports both US format ("1.00,2.00") and international format ("1,00,2,00").
-  Format is automatically detected based on comma count.
+  Expected format: "owed,paid" where amounts use period as decimal separator (e.g., "2.13,3.00").
   """
   @spec parse_line(String.t()) :: {:ok, transaction()} | {:error, Error.t()}
   def parse_line(line) do
@@ -28,15 +26,6 @@ defmodule CashRegister.Parser do
           {:ok, {owed, paid}}
         end
 
-      [o1, o2, p1, p2] ->
-        owed_str = "#{o1}.#{o2}"
-        paid_str = "#{p1}.#{p2}"
-
-        with {:ok, owed} <- parse_amount(owed_str),
-             {:ok, paid} <- parse_amount(paid_str) do
-          {:ok, {owed, paid}}
-        end
-
       _invalid ->
         {:error, {:invalid_line_format, %{line: line}}}
     end
@@ -45,7 +34,7 @@ defmodule CashRegister.Parser do
   @doc """
   Parses multiple lines from file content.
 
-  Skips empty lines and supports mixed US and international formats.
+  Skips empty lines. Each line should be in the format "owed,paid" (e.g., "2.13,3.00").
   """
   @spec parse_lines(String.t()) :: list(transaction()) | {:error, Error.t()}
   def parse_lines(content) do
