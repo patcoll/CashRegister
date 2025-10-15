@@ -233,7 +233,7 @@ defmodule CashRegisterTest do
       assert "3 quarters,1 dime,3 pennies" = Enum.at(lines, 0)
       assert "no change" = Enum.at(lines, 1)
       assert "2 quarters" = Enum.at(lines, 2)
-      assert "5 dollars" = Enum.at(lines, 3)
+      assert "1 five-dollar bill" = Enum.at(lines, 3)
     end
   end
 end

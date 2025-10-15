@@ -4,14 +4,16 @@ defmodule CashRegister.CurrencyTest do
   alias CashRegister.Currency
 
   describe "denominations/0" do
-    test "returns 5 denominations" do
+    test "returns 10 denominations" do
       {:ok, denoms} = Currency.denominations()
-      assert length(denoms) == 5
+      assert length(denoms) == 10
     end
 
-    test "first denomination is dollar" do
+    test "first denomination is hundred-dollar bill" do
       {:ok, denoms} = Currency.denominations()
-      assert hd(denoms) == {"dollar", 100, "dollar", "dollars"}
+
+      assert hd(denoms) ==
+               {"hundred_dollar", 10_000, "hundred-dollar bill", "hundred-dollar bills"}
     end
 
     test "last denomination is penny" do
@@ -23,14 +25,16 @@ defmodule CashRegister.CurrencyTest do
   describe "denominations/1 with currency code" do
     test "returns USD denominations for USD currency code" do
       {:ok, denoms} = Currency.denominations("USD")
-      assert length(denoms) == 5
-      assert hd(denoms) == {"dollar", 100, "dollar", "dollars"}
+      assert length(denoms) == 10
+
+      assert hd(denoms) ==
+               {"hundred_dollar", 10_000, "hundred-dollar bill", "hundred-dollar bills"}
     end
 
     test "returns EUR denominations for EUR currency code" do
       {:ok, denoms} = Currency.denominations("EUR")
-      assert length(denoms) == 8
-      assert hd(denoms) == {"euro_2", 200, "2-euro coin", "2-euro coins"}
+      assert length(denoms) == 15
+      assert hd(denoms) == {"euro_500", 50_000, "500-euro bill", "500-euro bills"}
       assert {"euro", 100, "euro", "euros"} in denoms
       assert List.last(denoms) == {"cent", 1, "cent", "cents"}
     end
@@ -43,14 +47,16 @@ defmodule CashRegister.CurrencyTest do
   describe "resolve_denominations/1" do
     test "returns default USD denominations with empty opts" do
       {:ok, denoms} = Currency.resolve_denominations([])
-      assert length(denoms) == 5
-      assert hd(denoms) == {"dollar", 100, "dollar", "dollars"}
+      assert length(denoms) == 10
+
+      assert hd(denoms) ==
+               {"hundred_dollar", 10_000, "hundred-dollar bill", "hundred-dollar bills"}
     end
 
     test "returns EUR denominations when currency option provided" do
       {:ok, denoms} = Currency.resolve_denominations(currency: "EUR")
-      assert length(denoms) == 8
-      assert hd(denoms) == {"euro_2", 200, "2-euro coin", "2-euro coins"}
+      assert length(denoms) == 15
+      assert hd(denoms) == {"euro_500", 50_000, "500-euro bill", "500-euro bills"}
     end
 
     test "returns custom denominations when provided" do
