@@ -100,4 +100,152 @@ defmodule CashRegisterTest do
       assert_correct_total(denominations, 90)
     end
   end
+
+  describe "process_file_and_output/3" do
+    @describetag :tmp_dir
+
+    test "writes formatted output to file", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "input.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      input_content = "2.12,3.00\n4.87,5.00"
+      File.write!(input_path, input_content)
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path)
+
+      assert {:ok, output_content} = File.read(output_path)
+      lines = String.split(output_content, "\n", trim: true)
+
+      assert length(lines) == 2
+      assert "3 quarters,1 dime,3 pennies" = Enum.at(lines, 0)
+      assert "1 dime,3 pennies" = Enum.at(lines, 1)
+    end
+
+    test "returns error for nonexistent input file", %{tmp_dir: tmp_dir} do
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      assert {:error, message} =
+               CashRegister.process_file_and_output("nonexistent.txt", output_path)
+
+      assert message =~ "cannot read file"
+      assert message =~ "nonexistent.txt"
+
+      refute File.exists?(output_path)
+    end
+
+    test "returns error for invalid input format", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "invalid.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "invalid,data,format")
+
+      assert {:error, message} =
+               CashRegister.process_file_and_output(input_path, output_path)
+
+      assert message =~ "invalid"
+
+      refute File.exists?(output_path)
+    end
+
+    test "returns error for insufficient payment", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "insufficient.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "5.00,3.00")
+
+      assert {:error, message} =
+               CashRegister.process_file_and_output(input_path, output_path)
+
+      assert message =~ "insufficient payment"
+
+      refute File.exists?(output_path)
+    end
+
+    test "handles empty input file", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "empty.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "")
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path)
+
+      assert {:ok, output_content} = File.read(output_path)
+      assert output_content == ""
+    end
+
+    test "overwrites existing output file", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "input.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "1.00,2.00")
+      File.write!(output_path, "old content that should be replaced")
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path)
+
+      assert {:ok, output_content} = File.read(output_path)
+      assert output_content == "1 dollar"
+    end
+
+    test "accepts custom divisor option", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "divisor.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "0.10,1.00")
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path, divisor: 5)
+
+      assert {:ok, output_content} = File.read(output_path)
+      assert {:ok, denominations} = parse_change_result(output_content)
+      assert_correct_total(denominations, 90)
+    end
+
+    test "accepts custom currency option", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "euro.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      File.write!(input_path, "1.00,2.00")
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path, currency: "EUR")
+
+      assert {:ok, output_content} = File.read(output_path)
+      assert output_content == "1 euro"
+    end
+
+    test "returns error when output directory does not exist", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "input.txt")
+      output_path = Path.join([tmp_dir, "nonexistent", "output.txt"])
+
+      File.write!(input_path, "1.00,2.00")
+
+      assert {:error, message} = CashRegister.process_file_and_output(input_path, output_path)
+
+      assert message =~ "cannot write file"
+      assert message =~ output_path
+    end
+
+    test "handles multiple transactions correctly", %{tmp_dir: tmp_dir} do
+      input_path = Path.join(tmp_dir, "multiple.txt")
+      output_path = Path.join(tmp_dir, "output.txt")
+
+      input_content = """
+      2.12,3.00
+      1.00,1.00
+      0.50,1.00
+      5.00,10.00
+      """
+
+      File.write!(input_path, input_content)
+
+      assert :ok = CashRegister.process_file_and_output(input_path, output_path)
+
+      assert {:ok, output_content} = File.read(output_path)
+      lines = String.split(output_content, "\n", trim: true)
+
+      assert length(lines) == 4
+      assert "3 quarters,1 dime,3 pennies" = Enum.at(lines, 0)
+      assert "no change" = Enum.at(lines, 1)
+      assert "2 quarters" = Enum.at(lines, 2)
+      assert "5 dollars" = Enum.at(lines, 3)
+    end
+  end
 end
