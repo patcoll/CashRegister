@@ -29,6 +29,7 @@ defmodule CashRegister.CLI do
   @doc """
   Main entry point for the escript.
   """
+  @spec main([String.t()]) :: no_return()
   def main(args) do
     args
     |> parse_args()
@@ -85,6 +86,7 @@ defmodule CashRegister.CLI do
     {:error, message}
   end
 
+  @spec handle_result(:ok | {:error, term()}) :: no_return()
   defp handle_result(:ok) do
     IO.puts("Success: Change calculated and written to output file")
     System.halt(0)
