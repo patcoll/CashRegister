@@ -30,30 +30,31 @@ defmodule CashRegister.CalculatorTest do
     end
 
     test "accepts custom divisor option" do
-      # 100 is divisible by 5, so uses Randomized strategy
+      # Owed amount (10) is divisible by 5, so uses Randomized strategy
       assert {:ok, result} = Calculator.calculate(10, 100, divisor: 5)
 
       assert_correct_total(result, 90)
     end
 
     test "custom divisor that triggers Greedy" do
-      # 88 is not divisible by 5, so uses Greedy
+      # Owed amount (88) is not divisible by 5, so uses Greedy
       assert {:ok,
               [
                 {"quarter", 3, "quarter", "quarters"},
                 {"dime", 1, "dime", "dimes"},
                 {"penny", 3, "penny", "pennies"}
-              ]} = Calculator.calculate(0, 88, divisor: 5)
+              ]} = Calculator.calculate(88, 176, divisor: 5)
     end
 
     test "calculates change with EUR currency" do
+      # Owed amount (100) is not divisible by 3, so uses Greedy strategy
       # 100 cents change using EUR denominations
       assert {:ok, [{"euro", 1, "euro", "euros"}]} =
-               Calculator.calculate(0, 100, currency: "EUR")
+               Calculator.calculate(100, 200, currency: "EUR")
     end
 
     test "calculates EUR change with randomized strategy" do
-      # 99 cents is divisible by 3, triggers randomized strategy
+      # Owed amount (0) is divisible by 3, triggers randomized strategy
       {:ok, result} = Calculator.calculate(0, 99, currency: "EUR")
 
       assert_correct_total(result, 99)

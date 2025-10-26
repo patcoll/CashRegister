@@ -101,7 +101,7 @@ defmodule CashRegister.CurrencyTest do
     end
 
     test "returns nil for unknown currency" do
-      assert Currency.info("XXX") == nil
+      refute Currency.info("XXX")
     end
   end
 

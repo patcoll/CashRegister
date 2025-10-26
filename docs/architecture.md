@@ -5,7 +5,7 @@ The Cash Register system uses a Strategy pattern with an extensible rules pipeli
 ## Strategies
 
 - **Greedy**: Standard largest-first denomination algorithm (default)
-- **Randomized**: Shuffles denominations before applying greedy (when change divisible by configured divisor)
+- **Randomized**: Shuffles denominations before applying greedy (when owed amount divisible by configured divisor)
 
 ## Components
 
@@ -17,30 +17,36 @@ The Cash Register system uses a Strategy pattern with an extensible rules pipeli
 
 ## Special Behavior
 
-When change is divisible by the configured divisor (default: 3), the system randomizes the denomination order before calculating. This produces valid but varied results.
+When the owed amount is divisible by the configured divisor (default: 3), the system randomizes the denomination order before calculating. This produces valid but varied results.
 
 **Example:**
 
-- Owed: $1.01, Paid: $2.00 -> Change: $0.99 (99 cents)
-- 99 / 3 = 33
-- Output varies: "9 dimes,1 nickel,4 pennies" or "3 quarters,2 dimes,4 pennies"
+- Owed: $3.00, Paid: $4.00 -> Change: $1.00 (100 cents)
+- Owed amount: $3.00 = 300 cents
+- 300 / 3 = 100 (divisible by 3, so uses Randomized strategy)
+- Output varies: "4 quarters" or "10 dimes" or "2 quarters,5 dimes"
 
 This behavior can be controlled using the `divisor` option.
 
 ## Extensible Rules Pipeline
 
-The rules system allows custom logic for strategy selection. Rules are functions that take the change amount and options, returning either `{:ok, strategy_module}` or `nil`.
+The rules system allows custom logic for strategy selection. Rules are functions that take a context map (with `:owed_cents`, `:paid_cents`, and `:change_cents`) and options, returning either `{:ok, strategy_module}` or `nil`.
 
 ### Custom Rule Example
 
 ```elixir
-# Define a custom rule
-large_amount_rule = fn cents, _opts ->
-  if cents > 10_000, do: {:ok, CashRegister.Strategies.Randomized}
+# Define a custom rule based on large change amounts
+large_change_rule = fn context, _opts ->
+  if context.change_cents > 10_000, do: {:ok, CashRegister.Strategies.Randomized}
+end
+
+# Or a rule based on the owed amount
+large_purchase_rule = fn context, _opts ->
+  if context.owed_cents > 50_000, do: {:ok, CashRegister.Strategies.Randomized}
 end
 
 # Use custom rules
-CashRegister.process_transaction(15_000, 20_000, strategy_rules: [large_amount_rule])
+CashRegister.process_transaction(15_000, 20_000, strategy_rules: [large_change_rule])
 ```
 
 Rules are evaluated in order, and the first matching rule determines the strategy. If no rules match, the Greedy strategy is used.

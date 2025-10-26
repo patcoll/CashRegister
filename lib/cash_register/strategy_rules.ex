@@ -3,7 +3,7 @@ defmodule CashRegister.StrategyRules do
   Strategy selection rules pipeline.
 
   Provides an extensible system for determining which change calculation strategy
-  to use based on the change amount and options. Rules are evaluated in order,
+  to use based on transaction context and options. Rules are evaluated in order,
   and the first rule that matches determines the strategy. If no rules match,
   the Greedy strategy is used as a fallback.
 
@@ -11,7 +11,12 @@ defmodule CashRegister.StrategyRules do
 
   ## Rule Functions
 
-  A rule is a function that takes `(change_cents, opts)` and returns either:
+  A rule is a function that takes `(context, opts)` where context is a map with:
+  - `:owed_cents` - The amount owed in cents
+  - `:paid_cents` - The amount paid in cents
+  - `:change_cents` - The change amount in cents
+
+  Rules return either:
   - `{:ok, {strategy, metadata}}` - Use this strategy with metadata
   - `{:ok, strategy}` - Use this strategy without metadata
   - `{:error, reason}` - Validation failed
@@ -21,20 +26,26 @@ defmodule CashRegister.StrategyRules do
   be included in telemetry events for observability.
 
   By default, the divisor rule is used which returns the Randomized strategy
-  when the change amount is divisible by 3 (or a custom divisor). Custom rules
+  when the owed amount is divisible by 3 (or a custom divisor). Custom rules
   can be provided via the `:strategy_rules` option.
   """
 
   alias CashRegister.Error
 
-  @type rule :: (non_neg_integer(), keyword() ->
+  @type context :: %{
+          owed_cents: non_neg_integer(),
+          paid_cents: non_neg_integer(),
+          change_cents: non_neg_integer()
+        }
+
+  @type rule :: (context(), keyword() ->
                    {:ok, {module(), map()}} | {:ok, module()} | {:error, Error.t()} | nil)
 
   @doc """
   Returns the default list of strategy rules.
 
   Currently includes only the divisor rule, which returns the Randomized strategy
-  when the change amount is divisible by the configured divisor (default: 3).
+  when the owed amount is divisible by the configured divisor (default: 3).
   """
   @spec default_rules() :: list(rule())
   def default_rules do
@@ -42,23 +53,23 @@ defmodule CashRegister.StrategyRules do
   end
 
   @doc """
-  Divisor-based rule: uses Randomized strategy if change is divisible by divisor.
+  Divisor-based rule: uses Randomized strategy if owed amount is divisible by divisor.
 
   Reads the divisor from opts (`:divisor` key, default: 3).
 
-  Returns `{:ok, {Randomized, metadata}}` if the change amount is divisible by the divisor,
+  Returns `{:ok, {Randomized, metadata}}` if the owed amount is divisible by the divisor,
   `{:error, reason}` if divisor is invalid, or `nil` if not divisible.
   """
-  @spec divisor_match(non_neg_integer(), keyword()) ::
+  @spec divisor_match(context(), keyword()) ::
           {:ok, {module(), map()}} | {:error, Error.t()} | nil
-  def divisor_match(change_cents, opts) do
+  def divisor_match(%{owed_cents: owed_cents}, opts) do
     divisor = Keyword.get(opts, :divisor, 3)
 
     cond do
       not is_integer(divisor) or divisor <= 0 ->
         {:error, {:invalid_divisor, %{divisor: divisor}}}
 
-      rem(change_cents, divisor) == 0 ->
+      rem(owed_cents, divisor) == 0 ->
         {:ok, {CashRegister.Strategies.Randomized, %{divisor: divisor, rule: :divisor_match}}}
 
       true ->
@@ -82,8 +93,8 @@ defmodule CashRegister.StrategyRules do
 
   If all rules return nil, defaults to `CashRegister.Strategies.Greedy`.
   """
-  @spec select_strategy(non_neg_integer(), keyword()) :: {:ok, module()} | {:error, Error.t()}
-  def select_strategy(change_cents, opts \\ []) do
+  @spec select_strategy(context(), keyword()) :: {:ok, module()} | {:error, Error.t()}
+  def select_strategy(context, opts \\ []) do
     rules = Keyword.get(opts, :strategy_rules, default_rules())
 
     result =
@@ -91,7 +102,7 @@ defmodule CashRegister.StrategyRules do
         rules,
         {:ok, {CashRegister.Strategies.Greedy, %{rule: :default_fallback}}},
         fn rule, acc ->
-          case rule.(change_cents, opts) do
+          case rule.(context, opts) do
             {:ok, {_strategy, _metadata}} = success -> {:halt, success}
             {:ok, strategy} -> {:halt, {:ok, {strategy, %{}}}}
             {:error, _} = error -> {:halt, error}
@@ -103,14 +114,13 @@ defmodule CashRegister.StrategyRules do
     case result do
       {:ok, {strategy, rule_metadata}} ->
         metadata =
-          Map.merge(rule_metadata, %{
-            strategy: inspect(strategy),
-            change_cents: change_cents
-          })
+          rule_metadata
+          |> Map.merge(context)
+          |> Map.put(:strategy, inspect(strategy))
 
         :telemetry.execute(
           [:cash_register, :strategy, :selected],
-          %{change_cents: change_cents},
+          context,
           metadata
         )
 

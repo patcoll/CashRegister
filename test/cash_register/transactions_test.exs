@@ -40,7 +40,7 @@ defmodule CashRegister.TransactionsTest do
 
       assert duration > 0
       assert metadata.status == :success
-      assert metadata.error_type == nil
+      refute metadata.error_type
     end
 
     test "emits telemetry events on error" do

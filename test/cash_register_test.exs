@@ -17,8 +17,9 @@ defmodule CashRegisterTest do
       assert {:ok, "no change"} = CashRegister.process_transaction(100, 100)
     end
 
-    test "processes transaction with divisible-by-3 change" do
-      assert {:ok, result} = CashRegister.process_transaction(101, 200)
+    test "processes transaction with divisible-by-3 owed amount" do
+      # Owed amount (300) is divisible by 3, so uses Randomized strategy
+      assert {:ok, result} = CashRegister.process_transaction(300, 399)
 
       assert {:ok, denominations} = parse_change_result(result)
 
@@ -26,7 +27,7 @@ defmodule CashRegisterTest do
     end
 
     test "accepts custom divisor option" do
-      # 90 is divisible by 5, so with divisor: 5 it uses Randomized
+      # Owed amount (10) is divisible by 5, so with divisor: 5 it uses Randomized
       assert {:ok, result} = CashRegister.process_transaction(10, 100, divisor: 5)
 
       assert {:ok, denominations} = parse_change_result(result)
@@ -87,7 +88,7 @@ defmodule CashRegisterTest do
 
       File.write!(file_path, content)
 
-      # 90 cents is divisible by 5, should use randomized strategy
+      # Owed amount (10 cents) is divisible by 5, should use randomized strategy
       results = CashRegister.process_file(file_path, divisor: 5)
 
       assert is_list(results)

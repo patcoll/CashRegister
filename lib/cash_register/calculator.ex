@@ -33,7 +33,13 @@ defmodule CashRegister.Calculator do
     if change_cents == 0 do
       {:ok, []}
     else
-      with {:ok, strategy} <- StrategyRules.select_strategy(change_cents, opts) do
+      context = %{
+        owed_cents: owed_cents,
+        paid_cents: paid_cents,
+        change_cents: change_cents
+      }
+
+      with {:ok, strategy} <- StrategyRules.select_strategy(context, opts) do
         strategy.calculate(change_cents, opts)
       end
     end
